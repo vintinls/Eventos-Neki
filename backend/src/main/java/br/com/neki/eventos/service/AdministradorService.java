@@ -5,7 +5,7 @@ import br.com.neki.eventos.dto.AdministradorRequestDTO;
 import br.com.neki.eventos.model.Administrador;
 import br.com.neki.eventos.repository.AdministradorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -16,20 +16,28 @@ public class AdministradorService {
     @Autowired
     private AdministradorRepository administradorRepository;
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public AdministradorDTO cadastrar(AdministradorRequestDTO dto) {
+        if (administradorRepository.findByEmail(dto.getEmail()).isPresent()) {
+            throw new RuntimeException("Email já cadastrado");
+        }
+
         Administrador admin = new Administrador();
         admin.setNome(dto.getNome());
         admin.setEmail(dto.getEmail());
-        admin.setSenha(passwordEncoder.encode(dto.getSenha())); // senha criptografada
+        admin.setSenha(passwordEncoder.encode(dto.getSenha()));
 
         Administrador salvo = administradorRepository.save(admin);
-
         return new AdministradorDTO(salvo.getId(), salvo.getNome(), salvo.getEmail());
     }
 
     public Optional<Administrador> buscarPorEmail(String email) {
         return administradorRepository.findByEmail(email);
+    }
+
+    public boolean checkPassword(String raw, String encoded) {
+        return passwordEncoder.matches(raw, encoded);
     }
 }
