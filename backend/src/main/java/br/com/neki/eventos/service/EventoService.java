@@ -2,6 +2,7 @@ package br.com.neki.eventos.service;
 
 import br.com.neki.eventos.dto.EventoDTO;
 import br.com.neki.eventos.dto.EventoRequestDTO;
+import br.com.neki.eventos.dto.EventoUpdateRequestDTO;
 import br.com.neki.eventos.model.Administrador;
 import br.com.neki.eventos.model.Evento;
 import br.com.neki.eventos.repository.AdministradorRepository;
@@ -33,31 +34,27 @@ public class EventoService {
         evento.setAdministrador(admin);
 
         Evento salvo = eventoRepository.save(evento);
-
-        return new EventoDTO(salvo.getId(), salvo.getNome(), salvo.getData(), salvo.getLocalizacao(), salvo.getImagem());
+        return mapToDTO(salvo);
     }
 
     public List<EventoDTO> listarPorAdministrador(Long administradorId) {
         return eventoRepository.findByAdministradorId(administradorId)
-                .stream()
-                .map(e -> new EventoDTO(e.getId(), e.getNome(), e.getData(), e.getLocalizacao(), e.getImagem()))
-                .collect(Collectors.toList());
+                .stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    public EventoDTO atualizar(Long eventoId, String novaLocalizacao, String novaData) {
+    public EventoDTO atualizar(Long eventoId, EventoUpdateRequestDTO dto) {
         Evento evento = eventoRepository.findById(eventoId)
                 .orElseThrow(() -> new RuntimeException("Evento não encontrado"));
 
-        if (novaLocalizacao != null) {
-            evento.setLocalizacao(novaLocalizacao);
+        if (dto.getLocalizacao() != null) {
+            evento.setLocalizacao(dto.getLocalizacao());
         }
-        if (novaData != null) {
-            evento.setData(java.time.LocalDateTime.parse(novaData));
+        if (dto.getData() != null) {
+            evento.setData(dto.getData());
         }
 
         Evento atualizado = eventoRepository.save(evento);
-
-        return new EventoDTO(atualizado.getId(), atualizado.getNome(), atualizado.getData(), atualizado.getLocalizacao(), atualizado.getImagem());
+        return mapToDTO(atualizado);
     }
 
     public void excluir(Long eventoId) {
@@ -65,5 +62,9 @@ public class EventoService {
             throw new RuntimeException("Evento não encontrado");
         }
         eventoRepository.deleteById(eventoId);
+    }
+
+    private EventoDTO mapToDTO(Evento e) {
+        return new EventoDTO(e.getId(), e.getNome(), e.getData(), e.getLocalizacao(), e.getImagem());
     }
 }
