@@ -1,10 +1,9 @@
 package br.com.neki.eventos.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
-import java.util.Objects;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "eventos")
@@ -14,24 +13,25 @@ public class Evento {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "O nome do evento é obrigatório")
     @Column(nullable = false)
     private String nome;
 
-    @FutureOrPresent(message = "A data deve ser no presente ou no futuro")
     @Column(nullable = false)
     private LocalDateTime data;
 
-    @NotBlank(message = "A localização é obrigatória")
     @Column(nullable = false)
     private String localizacao;
 
+    // Armazena binário corretamente como bytea no Postgres
     @Lob
-    @Column(columnDefinition = "BYTEA") // PostgreSQL
-    private byte[] imagem; // agora armazena a imagem real em binário
+    @JdbcTypeCode(SqlTypes.BINARY) // <— força binder de bytes
+    @Column(name = "imagem", nullable = true)
+    private byte[] imagem;
 
-    // Relacionamento: muitos eventos para 1 administrador
-    @ManyToOne(fetch = FetchType.LAZY)
+    @Column(name = "imagem_url")
+    private String imagemUrl;
+
+    @ManyToOne
     @JoinColumn(name = "administrador_id", nullable = false)
     private Administrador administrador;
 
@@ -51,20 +51,9 @@ public class Evento {
     public byte[] getImagem() { return imagem; }
     public void setImagem(byte[] imagem) { this.imagem = imagem; }
 
+    public String getImagemUrl() { return imagemUrl; }
+    public void setImagemUrl(String imagemUrl) { this.imagemUrl = imagemUrl; }
+
     public Administrador getAdministrador() { return administrador; }
     public void setAdministrador(Administrador administrador) { this.administrador = administrador; }
-
-    // equals e hashCode baseados no ID
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Evento)) return false;
-        Evento evento = (Evento) o;
-        return Objects.equals(getId(), evento.getId());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getId());
-    }
 }

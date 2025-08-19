@@ -1,59 +1,41 @@
 package br.com.neki.eventos.dto;
 
 import java.time.LocalDateTime;
-import java.util.Base64;
 
 public class EventoDTO {
+
     private Long id;
     private String nome;
     private LocalDateTime data;
     private String localizacao;
-    private String imagem; // continua String, mas agora em Base64
+    private byte[] imagem;     // binário
+    private String imagemUrl;  // url alternativa
 
-    public EventoDTO() {}
-
-    // Construtor recebendo byte[]
-    public EventoDTO(Long id, String nome, LocalDateTime data, String localizacao, byte[] imagemBytes) {
+    public EventoDTO(Long id, String nome, LocalDateTime data, String localizacao, byte[] imagem, String imagemUrl) {
         this.id = id;
         this.nome = nome;
         this.data = data;
         this.localizacao = localizacao;
-        this.imagem = (imagemBytes != null) ? Base64.getEncoder().encodeToString(imagemBytes) : null;
+        this.imagem = imagem;
+        this.imagemUrl = imagemUrl;
     }
 
     // Getters e Setters
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public String getNome() {
-        return nome;
-    }
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
 
-    public LocalDateTime getData() {
-        return data;
-    }
-    public void setData(LocalDateTime data) {
-        this.data = data;
-    }
+    public LocalDateTime getData() { return data; }
+    public void setData(LocalDateTime data) { this.data = data; }
 
-    public String getLocalizacao() {
-        return localizacao;
-    }
-    public void setLocalizacao(String localizacao) {
-        this.localizacao = localizacao;
-    }
+    public String getLocalizacao() { return localizacao; }
+    public void setLocalizacao(String localizacao) { this.localizacao = localizacao; }
 
-    public String getImagem() {
-        return imagem;
-    }
-    public void setImagem(String imagem) {
-        this.imagem = imagem;
-    }
+    public byte[] getImagem() { return imagem; }
+    public void setImagem(byte[] imagem) { this.imagem = imagem; }
+
+    public String getImagemUrl() { return imagemUrl; }
+    public void setImagemUrl(String imagemUrl) { this.imagemUrl = imagemUrl; }
 }
