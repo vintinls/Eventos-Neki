@@ -1,7 +1,10 @@
 package br.com.neki.eventos.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "eventos")
@@ -11,12 +14,15 @@ public class Evento {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "O nome do evento é obrigatório")
     @Column(nullable = false)
     private String nome;
 
+    @FutureOrPresent(message = "A data deve ser no presente ou no futuro")
     @Column(nullable = false)
     private LocalDateTime data;
 
+    @NotBlank(message = "A localização é obrigatória")
     @Column(nullable = false)
     private String localizacao;
 
@@ -24,7 +30,7 @@ public class Evento {
     private String imagem; // URL da imagem
 
     // Relacionamento: muitos eventos para 1 administrador
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "administrador_id", nullable = false)
     private Administrador administrador;
 
@@ -69,5 +75,19 @@ public class Evento {
     }
     public void setAdministrador(Administrador administrador) {
         this.administrador = administrador;
+    }
+
+    // equals e hashCode baseados no ID
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Evento)) return false;
+        Evento evento = (Evento) o;
+        return Objects.equals(getId(), evento.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId());
     }
 }
