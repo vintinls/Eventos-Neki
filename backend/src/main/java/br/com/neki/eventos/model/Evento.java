@@ -26,8 +26,9 @@ public class Evento {
     @Column(nullable = false)
     private String localizacao;
 
-    @Column
-    private String imagem; // URL da imagem
+    @Lob
+    @Column(columnDefinition = "BYTEA") // PostgreSQL
+    private byte[] imagem; // agora armazena a imagem real em binário
 
     // Relacionamento: muitos eventos para 1 administrador
     @ManyToOne(fetch = FetchType.LAZY)
@@ -35,47 +36,23 @@ public class Evento {
     private Administrador administrador;
 
     // Getters e Setters
-    public Long getId() {
-        return id;
-    }
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public String getNome() {
-        return nome;
-    }
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
 
-    public LocalDateTime getData() {
-        return data;
-    }
-    public void setData(LocalDateTime data) {
-        this.data = data;
-    }
+    public LocalDateTime getData() { return data; }
+    public void setData(LocalDateTime data) { this.data = data; }
 
-    public String getLocalizacao() {
-        return localizacao;
-    }
-    public void setLocalizacao(String localizacao) {
-        this.localizacao = localizacao;
-    }
+    public String getLocalizacao() { return localizacao; }
+    public void setLocalizacao(String localizacao) { this.localizacao = localizacao; }
 
-    public String getImagem() {
-        return imagem;
-    }
-    public void setImagem(String imagem) {
-        this.imagem = imagem;
-    }
+    public byte[] getImagem() { return imagem; }
+    public void setImagem(byte[] imagem) { this.imagem = imagem; }
 
-    public Administrador getAdministrador() {
-        return administrador;
-    }
-    public void setAdministrador(Administrador administrador) {
-        this.administrador = administrador;
-    }
+    public Administrador getAdministrador() { return administrador; }
+    public void setAdministrador(Administrador administrador) { this.administrador = administrador; }
 
     // equals e hashCode baseados no ID
     @Override

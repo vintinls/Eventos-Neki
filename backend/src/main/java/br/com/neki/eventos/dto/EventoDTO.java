@@ -1,22 +1,24 @@
 package br.com.neki.eventos.dto;
 
 import java.time.LocalDateTime;
+import java.util.Base64;
 
 public class EventoDTO {
     private Long id;
     private String nome;
     private LocalDateTime data;
     private String localizacao;
-    private String imagem;
+    private String imagem; // continua String, mas agora em Base64
 
     public EventoDTO() {}
 
-    public EventoDTO(Long id, String nome, LocalDateTime data, String localizacao, String imagem) {
+    // Construtor recebendo byte[]
+    public EventoDTO(Long id, String nome, LocalDateTime data, String localizacao, byte[] imagemBytes) {
         this.id = id;
         this.nome = nome;
         this.data = data;
         this.localizacao = localizacao;
-        this.imagem = imagem;
+        this.imagem = (imagemBytes != null) ? Base64.getEncoder().encodeToString(imagemBytes) : null;
     }
 
     // Getters e Setters

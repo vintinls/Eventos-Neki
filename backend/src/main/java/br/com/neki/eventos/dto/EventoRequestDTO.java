@@ -2,6 +2,8 @@ package br.com.neki.eventos.dto;
 
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.time.LocalDateTime;
 
 public class EventoRequestDTO {
@@ -15,34 +17,22 @@ public class EventoRequestDTO {
     @NotBlank(message = "Localização é obrigatória")
     private String localizacao;
 
-    private String imagem; // URL da imagem (ou caminho salvo em /uploads)
+    private MultipartFile imagem; // agora vem como arquivo multipart
+    private Long administradorId;
 
     // Getters e Setters
-    public String getNome() {
-        return nome;
-    }
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
+    public String getNome() { return nome; }
+    public void setNome(String nome) { this.nome = nome; }
 
-    public LocalDateTime getData() {
-        return data;
-    }
-    public void setData(LocalDateTime data) {
-        this.data = data;
-    }
+    public LocalDateTime getData() { return data; }
+    public void setData(LocalDateTime data) { this.data = data; }
 
-    public String getLocalizacao() {
-        return localizacao;
-    }
-    public void setLocalizacao(String localizacao) {
-        this.localizacao = localizacao;
-    }
+    public String getLocalizacao() { return localizacao; }
+    public void setLocalizacao(String localizacao) { this.localizacao = localizacao; }
 
-    public String getImagem() {
-        return imagem;
-    }
-    public void setImagem(String imagem) {
-        this.imagem = imagem;
-    }
+    public MultipartFile getImagem() { return imagem; }
+    public void setImagem(MultipartFile imagem) { this.imagem = imagem; }
+
+    public Long getAdministradorId() { return administradorId; }
+    public void setAdministradorId(Long administradorId) { this.administradorId = administradorId; }
 }

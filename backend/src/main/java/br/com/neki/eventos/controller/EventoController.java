@@ -3,17 +3,19 @@ package br.com.neki.eventos.controller;
 import br.com.neki.eventos.dto.EventoDTO;
 import br.com.neki.eventos.dto.EventoRequestDTO;
 import br.com.neki.eventos.dto.EventoUpdateRequestDTO;
-import br.com.neki.eventos.model.Administrador;
-import br.com.neki.eventos.repository.AdministradorRepository;
 import br.com.neki.eventos.service.EventoService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.format.annotation.DateTimeFormat;
 
+import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -24,49 +26,46 @@ public class EventoController {
     @Autowired
     private EventoService eventoService;
 
-    @Autowired
-    private AdministradorRepository administradorRepository;
-
-    /**
-     * Lista todos os eventos do administrador autenticado
-     */
-    @GetMapping
-    public ResponseEntity<List<EventoDTO>> listarPorAdmin(Authentication authentication) {
-        String email = authentication.getName();
-        Administrador admin = administradorRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("Administrador não encontrado"));
-
-        return ResponseEntity.ok(eventoService.listarPorAdministrador(admin.getId()));
+    @GetMapping("/admin/{administradorId}")
+    public ResponseEntity<List<EventoDTO>> listarPorAdmin(@PathVariable Long administradorId) {
+        return ResponseEntity.ok(eventoService.listarPorAdministrador(administradorId));
     }
 
-    /**
-     * Cria evento para o administrador autenticado
-     */
-    @PostMapping
-    public ResponseEntity<EventoDTO> criar(@Valid @RequestBody EventoRequestDTO dto,
-                                           Authentication authentication) {
-        String email = authentication.getName();
-        Administrador admin = administradorRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("Administrador não encontrado"));
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<EventoDTO> criar(
+            @RequestParam("nome") String nome,
+            @RequestParam("data") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime data,
+            @RequestParam("localizacao") String localizacao,
+            @RequestParam("administradorId") Long administradorId,
+            @RequestParam(value = "imagem", required = false) MultipartFile imagem) throws IOException {
 
-        return ResponseEntity.ok(eventoService.criar(dto, admin));
+        EventoRequestDTO dto = new EventoRequestDTO();
+        dto.setNome(nome);
+        dto.setData(data);
+        dto.setLocalizacao(localizacao);
+        dto.setAdministradorId(administradorId);
+        dto.setImagem(imagem);
+
+        return ResponseEntity.ok(eventoService.criar(dto));
     }
 
-    /**
-     * Atualiza evento
-     */
     @PutMapping("/{eventoId}")
     public ResponseEntity<EventoDTO> atualizar(@PathVariable Long eventoId,
-                                               @Valid @RequestBody EventoUpdateRequestDTO dto) {
+                                               @RequestBody EventoUpdateRequestDTO dto) {
         return ResponseEntity.ok(eventoService.atualizar(eventoId, dto));
     }
 
-    /**
-     * Exclui evento
-     */
     @DeleteMapping("/{eventoId}")
     public ResponseEntity<Void> excluir(@PathVariable Long eventoId) {
         eventoService.excluir(eventoId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/imagem")
+    public ResponseEntity<byte[]> buscarImagem(@PathVariable Long id) {
+        byte[] imagem = eventoService.buscarImagem(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG) // ou IMAGE_PNG
+                .body(imagem);
     }
 }
