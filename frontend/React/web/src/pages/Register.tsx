@@ -1,22 +1,43 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 export default function Register() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [erro, setErro] = useState('');
+  const [sucesso, setSucesso] = useState('');
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErro('');
+    setSucesso('');
 
     if (senha !== confirmarSenha) {
-      alert('As senhas não coincidem!');
+      setErro('As senhas não coincidem!');
       return;
     }
 
-    console.log('Nome:', nome, 'Email:', email, 'Senha:', senha);
-    // depois aqui chamaremos a API do backend
-    alert('Cadastro realizado com sucesso!');
+    try {
+      const response = await api.post('/auth/register', {
+        nome,
+        email,
+        senha,
+      });
+
+      console.log('Cadastro realizado:', response.data);
+
+      setSucesso('Cadastro realizado com sucesso!');
+
+      // Redireciona para login após 2 segundos
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err: any) {
+      console.error('Erro no cadastro:', err);
+      setErro('Erro ao cadastrar. Verifique os dados.');
+    }
   };
 
   return (
@@ -78,6 +99,10 @@ export default function Register() {
               required
             />
           </div>
+
+          {/* Mensagens */}
+          {erro && <p className='text-red-600 text-sm'>{erro}</p>}
+          {sucesso && <p className='text-green-600 text-sm'>{sucesso}</p>}
 
           {/* Botão cadastrar */}
           <button
