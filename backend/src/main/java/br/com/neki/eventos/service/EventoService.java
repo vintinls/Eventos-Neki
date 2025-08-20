@@ -13,9 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,7 +27,7 @@ public class EventoService {
     private AdministradorRepository administradorRepository;
 
     /**
-     * Cria um novo evento associado a um administrador usando upload de imagem.
+     * Cria um novo evento associado a um administrador usando upload de imagem (salva binário no banco).
      */
     public EventoDTO criarComUpload(EventoRequestDTO dto, MultipartFile imagem) throws IOException {
         validarData(dto.getData());
@@ -45,17 +42,8 @@ public class EventoService {
         evento.setAdministrador(admin);
 
         if (imagem != null && !imagem.isEmpty()) {
-            // Salva no banco
-            evento.setImagem(imagem.getBytes());
-
-            // Salva em disco
-            String fileName = System.currentTimeMillis() + "_" + imagem.getOriginalFilename();
-            Path filePath = Paths.get("uploads", fileName);
-            Files.createDirectories(filePath.getParent());
-            Files.write(filePath, imagem.getBytes());
-
-            // URL para acessar a imagem
-            evento.setImagemUrl("/uploads/" + fileName);
+            evento.setImagem(imagem.getBytes()); // salva apenas no banco
+            evento.setImagemUrl(null);           // limpa URL
         }
 
         Evento salvo = eventoRepository.save(evento);
@@ -77,9 +65,8 @@ public class EventoService {
         evento.setLocalizacao(dto.getLocalizacao());
         evento.setAdministrador(admin);
 
-        // neste caso, não salva binário, só a URL
-        evento.setImagem(null);
-        evento.setImagemUrl(dto.getImagemUrl());
+        evento.setImagemUrl(dto.getImagemUrl()); // salva só a URL
+        evento.setImagem(null);                  // limpa binário
 
         Evento salvo = eventoRepository.save(evento);
         return mapToDTO(salvo);
@@ -156,13 +143,24 @@ public class EventoService {
      * Converte entidade para DTO.
      */
     private EventoDTO mapToDTO(Evento e) {
+        String resolvedUrl = null;
+
+        if (e.getImagemUrl() != null) {
+            // Caso seja imagem externa
+            resolvedUrl = e.getImagemUrl();
+        } else if (e.getImagem() != null) {
+            // Caso seja imagem em binário → o React precisa buscar via endpoint protegido
+            resolvedUrl = "/eventos/" + e.getId() + "/imagem";
+        }
+
         return new EventoDTO(
                 e.getId(),
                 e.getNome(),
                 e.getData(),
                 e.getLocalizacao(),
-                e.getImagem(),
-                e.getImagemUrl()
+                resolvedUrl
         );
     }
+
+
 }

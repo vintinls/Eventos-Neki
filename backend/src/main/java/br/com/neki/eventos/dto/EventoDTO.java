@@ -8,15 +8,13 @@ public class EventoDTO {
     private String nome;
     private LocalDateTime data;
     private String localizacao;
-    private byte[] imagem;     // binário
-    private String imagemUrl;  // url alternativa
+    private String imagemUrl;  // url ou vazio
 
-    public EventoDTO(Long id, String nome, LocalDateTime data, String localizacao, byte[] imagem, String imagemUrl) {
+    public EventoDTO(Long id, String nome, LocalDateTime data, String localizacao, String imagemUrl) {
         this.id = id;
         this.nome = nome;
         this.data = data;
         this.localizacao = localizacao;
-        this.imagem = imagem;
         this.imagemUrl = imagemUrl;
     }
 
@@ -32,9 +30,6 @@ public class EventoDTO {
 
     public String getLocalizacao() { return localizacao; }
     public void setLocalizacao(String localizacao) { this.localizacao = localizacao; }
-
-    public byte[] getImagem() { return imagem; }
-    public void setImagem(byte[] imagem) { this.imagem = imagem; }
 
     public String getImagemUrl() { return imagemUrl; }
     public void setImagemUrl(String imagemUrl) { this.imagemUrl = imagemUrl; }

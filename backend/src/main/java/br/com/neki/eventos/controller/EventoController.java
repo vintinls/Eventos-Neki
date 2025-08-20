@@ -24,7 +24,7 @@ public class EventoController {
     @Autowired
     private EventoService eventoService;
 
-    // 🔹 Criar evento com upload de arquivo (JSON + imagem)
+    // 🔹 Criar evento com upload de arquivo (JSON + imagem binária no banco)
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EventoDTO> criarComUpload(
             @RequestPart("dados") @Valid EventoRequestDTO request,
@@ -66,13 +66,29 @@ public class EventoController {
         return ResponseEntity.noContent().build();
     }
 
-    // 🔹 Retorna a imagem do evento em binário
     @GetMapping("/{id}/imagem")
-    public ResponseEntity<byte[]> buscarImagem(@PathVariable Long id) {
+    public ResponseEntity<byte[]> buscarImagem(@PathVariable Long id) throws IOException {
         byte[] imagem = eventoService.buscarImagem(id);
+
+        if (imagem == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Detecta tipo correto da imagem
+        String contentType;
+        try (var is = new java.io.ByteArrayInputStream(imagem)) {
+            contentType = java.net.URLConnection.guessContentTypeFromStream(is);
+        }
+
+        if (contentType == null) {
+            contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE; // fallback genérico
+        }
+
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"evento_" + id + ".jpg\"")
-                .contentType(MediaType.IMAGE_JPEG)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"evento_" + id + "\"")
+                .contentType(MediaType.parseMediaType(contentType))
                 .body(imagem);
     }
+
+
 }

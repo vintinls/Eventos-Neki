@@ -28,21 +28,17 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-
-            // 🔥 Ativa o CORS usando nosso CorsConfigurationSource
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
             .authorizeHttpRequests(auth -> auth
-                // Swagger liberado
+                // 🔓 Swagger liberado
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                // Auth liberado
+                // 🔓 Auth liberado
                 .requestMatchers("/auth/**").permitAll()
-                // Demais rotas precisam de auth
+                // 🔒 Qualquer outra rota precisa de token
                 .anyRequest().authenticated()
             )
-
+            // 🔥 Filtro JWT entra antes da autenticação padrão
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -62,9 +58,10 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // React local
+        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // front React local
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedHeaders(List.of("*")); // aceita qualquer Content-Type
+        configuration.setExposedHeaders(List.of("Authorization")); // expõe o header pro front
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
