@@ -13,9 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,12 +27,10 @@ public class EventoService {
     private AdministradorRepository administradorRepository;
 
     /**
-     * Cria um novo evento associado a um administrador usando upload de imagem.
+     * Cria um novo evento associado a um administrador usando upload de imagem (salva binário no banco).
      */
-    public EventoDTO criar(EventoRequestDTO dto) throws IOException {
-        if (dto.getData().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("A data do evento deve ser no presente ou no futuro");
-        }
+    public EventoDTO criarComUpload(EventoRequestDTO dto, MultipartFile imagem) throws IOException {
+        validarData(dto.getData());
 
         Administrador admin = administradorRepository.findById(dto.getAdministradorId())
                 .orElseThrow(() -> new EntityNotFoundException("Administrador não encontrado"));
@@ -44,23 +39,12 @@ public class EventoService {
         evento.setNome(dto.getNome());
         evento.setData(dto.getData());
         evento.setLocalizacao(dto.getLocalizacao());
-
-        MultipartFile imagem = dto.getImagem();
-        if (imagem != null && !imagem.isEmpty()) {
-            // Salva no banco
-            evento.setImagem(imagem.getBytes());
-
-            // Salva em disco
-            String fileName = System.currentTimeMillis() + "_" + imagem.getOriginalFilename();
-            Path filePath = Paths.get("uploads", fileName);
-            Files.createDirectories(filePath.getParent());
-            Files.write(filePath, imagem.getBytes());
-
-            // URL para acessar a imagem
-            evento.setImagemUrl("/uploads/" + fileName);
-        }
-
         evento.setAdministrador(admin);
+
+        if (imagem != null && !imagem.isEmpty()) {
+            evento.setImagem(imagem.getBytes()); // salva apenas no banco
+            evento.setImagemUrl(null);           // limpa URL
+        }
 
         Evento salvo = eventoRepository.save(evento);
         return mapToDTO(salvo);
@@ -69,23 +53,20 @@ public class EventoService {
     /**
      * Cria um novo evento associado a um administrador usando apenas uma URL.
      */
-    public EventoDTO criarComUrl(String nome, LocalDateTime data, String localizacao, Long administradorId, String imagemUrl) {
-        if (data.isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("A data do evento deve ser no presente ou no futuro");
-        }
+    public EventoDTO criarComUrl(EventoRequestDTO dto) {
+        validarData(dto.getData());
 
-        Administrador admin = administradorRepository.findById(administradorId)
+        Administrador admin = administradorRepository.findById(dto.getAdministradorId())
                 .orElseThrow(() -> new EntityNotFoundException("Administrador não encontrado"));
 
         Evento evento = new Evento();
-        evento.setNome(nome);
-        evento.setData(data);
-        evento.setLocalizacao(localizacao);
+        evento.setNome(dto.getNome());
+        evento.setData(dto.getData());
+        evento.setLocalizacao(dto.getLocalizacao());
         evento.setAdministrador(admin);
 
-        // neste caso, não salva binário, só a URL
-        evento.setImagem(null);
-        evento.setImagemUrl(imagemUrl);
+        evento.setImagemUrl(dto.getImagemUrl()); // salva só a URL
+        evento.setImagem(null);                  // limpa binário
 
         Evento salvo = eventoRepository.save(evento);
         return mapToDTO(salvo);
@@ -122,9 +103,7 @@ public class EventoService {
             evento.setLocalizacao(dto.getLocalizacao());
         }
         if (dto.getData() != null) {
-            if (dto.getData().isBefore(LocalDateTime.now())) {
-                throw new IllegalArgumentException("A data do evento deve ser no presente ou no futuro");
-            }
+            validarData(dto.getData());
             evento.setData(dto.getData());
         }
 
@@ -152,16 +131,36 @@ public class EventoService {
     }
 
     /**
+     * Valida se a data é presente ou futura.
+     */
+    private void validarData(LocalDateTime data) {
+        if (data.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("A data do evento deve ser no presente ou no futuro");
+        }
+    }
+
+    /**
      * Converte entidade para DTO.
      */
     private EventoDTO mapToDTO(Evento e) {
+        String resolvedUrl = null;
+
+        if (e.getImagemUrl() != null) {
+            // Caso seja imagem externa
+            resolvedUrl = e.getImagemUrl();
+        } else if (e.getImagem() != null) {
+            // Caso seja imagem em binário → o React precisa buscar via endpoint protegido
+            resolvedUrl = "/eventos/" + e.getId() + "/imagem";
+        }
+
         return new EventoDTO(
                 e.getId(),
                 e.getNome(),
                 e.getData(),
                 e.getLocalizacao(),
-                e.getImagem(),
-                e.getImagemUrl()
+                resolvedUrl
         );
     }
+
+
 }

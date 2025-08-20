@@ -2,8 +2,6 @@ package br.com.neki.eventos.dto;
 
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.time.LocalDateTime;
 
 public class EventoRequestDTO {
@@ -17,8 +15,9 @@ public class EventoRequestDTO {
     @NotBlank(message = "Localização é obrigatória")
     private String localizacao;
 
-    private MultipartFile imagem; // agora vem como arquivo multipart
     private Long administradorId;
+
+    private String imagemUrl; // usado quando o evento for criado via URL
 
     // Getters e Setters
     public String getNome() { return nome; }
@@ -30,9 +29,9 @@ public class EventoRequestDTO {
     public String getLocalizacao() { return localizacao; }
     public void setLocalizacao(String localizacao) { this.localizacao = localizacao; }
 
-    public MultipartFile getImagem() { return imagem; }
-    public void setImagem(MultipartFile imagem) { this.imagem = imagem; }
-
     public Long getAdministradorId() { return administradorId; }
     public void setAdministradorId(Long administradorId) { this.administradorId = administradorId; }
+
+    public String getImagemUrl() { return imagemUrl; }
+    public void setImagemUrl(String imagemUrl) { this.imagemUrl = imagemUrl; }
 }
