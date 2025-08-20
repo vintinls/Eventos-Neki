@@ -43,20 +43,35 @@ export default function HomeEventos() {
     e.preventDefault();
 
     try {
+      // formata data para LocalDateTime
+      const dataFormatada = data + 'T00:00:00';
+
       if (modoImagem === 'url') {
+        // JSON puro
         await api.post('/eventos/url', {
           nome,
-          data,
+          data: dataFormatada,
           localizacao,
           imagemUrl,
-          adminId: admin.id,
+          administradorId: admin.id, // ✅ corrigido
         });
       } else {
+        // FormData com JSON + imagem
         const formData = new FormData();
-        formData.append('nome', nome);
-        formData.append('data', data);
-        formData.append('localizacao', localizacao);
-        formData.append('adminId', admin.id);
+        formData.append(
+          'dados',
+          new Blob(
+            [
+              JSON.stringify({
+                nome,
+                data: dataFormatada,
+                localizacao,
+                administradorId: admin.id, // ✅ corrigido
+              }),
+            ],
+            { type: 'application/json' }
+          )
+        );
         if (imagemFile) {
           formData.append('imagem', imagemFile);
         }
@@ -96,8 +111,9 @@ export default function HomeEventos() {
     novaLocal: string
   ) => {
     try {
+      const dataFormatada = novaData + 'T00:00:00';
       await api.put(`/eventos/${id}`, {
-        data: novaData,
+        data: dataFormatada,
         localizacao: novaLocal,
       });
       fetchEventos();
@@ -146,8 +162,10 @@ export default function HomeEventos() {
                   onClick={() =>
                     handleEdit(
                       evento.id,
-                      prompt('Nova data (YYYY-MM-DD)', evento.data) ||
-                        evento.data,
+                      prompt(
+                        'Nova data (YYYY-MM-DD)',
+                        evento.data.split('T')[0]
+                      ) || evento.data.split('T')[0],
                       prompt('Nova localização', evento.localizacao) ||
                         evento.localizacao
                     )
