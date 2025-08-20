@@ -1,16 +1,45 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [lembrar, setLembrar] = useState(false);
+  const [erro, setErro] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Email:', email, 'Senha:', senha, 'Lembrar:', lembrar);
-    // depois aqui chamaremos a API do backend
+    setErro('');
+
+    try {
+      // chamada para backend
+      const response = await api.post('/auth/login', {
+        email,
+        senha,
+      });
+
+      const { token, administrador } = response.data;
+
+      // salvar token
+      if (lembrar) {
+        localStorage.setItem('token', token);
+      } else {
+        sessionStorage.setItem('token', token);
+      }
+
+      // salvar dados do admin
+      localStorage.setItem('admin', JSON.stringify(administrador));
+
+      console.log('Login realizado:', administrador);
+
+      // redirecionar para Home
+      navigate('/home');
+    } catch (err: any) {
+      console.error('Erro no login:', err);
+      setErro('Email ou senha inválidos');
+    }
   };
 
   return (
@@ -21,7 +50,7 @@ export default function Login() {
         </h1>
 
         <form onSubmit={handleSubmit} className='space-y-4'>
-          {/* Campo Email */}
+          {/* Email */}
           <div>
             <label className='block text-gray-700 mb-1'>Email</label>
             <input
@@ -34,7 +63,7 @@ export default function Login() {
             />
           </div>
 
-          {/* Campo Senha */}
+          {/* Senha */}
           <div>
             <label className='block text-gray-700 mb-1'>Senha</label>
             <input
@@ -57,6 +86,9 @@ export default function Login() {
             />
             <span className='text-gray-600'>Gravar senha</span>
           </div>
+
+          {/* Erro */}
+          {erro && <p className='text-red-600 text-sm'>{erro}</p>}
 
           {/* Botão Entrar */}
           <button
