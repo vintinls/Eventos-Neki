@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import ImagemEvento from '../components/ImagemEvento'; // ✅ importa o componente
 
 interface Evento {
   id: number;
   nome: string;
   data: string;
   localizacao: string;
-  imagemUrl?: string;
+  imagemUrl?: string; // pode ser preenchido quando for URL externa
 }
 
 export default function HomeEventos() {
@@ -21,13 +22,16 @@ export default function HomeEventos() {
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [modoImagem, setModoImagem] = useState<'url' | 'upload'>('url');
 
-  // pegar admin logado
+  // pegar admin logado e token
   const admin = JSON.parse(localStorage.getItem('admin') || '{}');
+  const token = localStorage.getItem('token');
 
-  // buscar eventos
+  // Buscar eventos
   const fetchEventos = async () => {
     try {
-      const response = await api.get(`/eventos/admin/${admin.id}`);
+      const response = await api.get(`/eventos/admin/${admin.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setEventos(response.data);
     } catch (err) {
       console.error('Erro ao buscar eventos:', err);
@@ -43,20 +47,21 @@ export default function HomeEventos() {
     e.preventDefault();
 
     try {
-      // formata data para LocalDateTime
       const dataFormatada = data + 'T00:00:00';
 
       if (modoImagem === 'url') {
-        // JSON puro
-        await api.post('/eventos/url', {
-          nome,
-          data: dataFormatada,
-          localizacao,
-          imagemUrl,
-          administradorId: admin.id, // ✅ corrigido
-        });
+        await api.post(
+          '/eventos/url',
+          {
+            nome,
+            data: dataFormatada,
+            localizacao,
+            imagemUrl,
+            administradorId: admin.id,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
       } else {
-        // FormData com JSON + imagem
         const formData = new FormData();
         formData.append(
           'dados',
@@ -66,7 +71,7 @@ export default function HomeEventos() {
                 nome,
                 data: dataFormatada,
                 localizacao,
-                administradorId: admin.id, // ✅ corrigido
+                administradorId: admin.id,
               }),
             ],
             { type: 'application/json' }
@@ -77,7 +82,10 @@ export default function HomeEventos() {
         }
 
         await api.post('/eventos/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
         });
       }
 
@@ -97,14 +105,16 @@ export default function HomeEventos() {
   // excluir evento
   const handleDelete = async (id: number) => {
     try {
-      await api.delete(`/eventos/${id}`);
+      await api.delete(`/eventos/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       fetchEventos();
     } catch (err) {
       console.error('Erro ao excluir evento:', err);
     }
   };
 
-  // editar evento (apenas data e localização)
+  // editar evento
   const handleEdit = async (
     id: number,
     novaData: string,
@@ -112,10 +122,11 @@ export default function HomeEventos() {
   ) => {
     try {
       const dataFormatada = novaData + 'T00:00:00';
-      await api.put(`/eventos/${id}`, {
-        data: dataFormatada,
-        localizacao: novaLocal,
-      });
+      await api.put(
+        `/eventos/${id}`,
+        { data: dataFormatada, localizacao: novaLocal },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       fetchEventos();
     } catch (err) {
       console.error('Erro ao editar evento:', err);
@@ -143,13 +154,13 @@ export default function HomeEventos() {
             key={evento.id}
             className='bg-white shadow-md rounded-lg overflow-hidden'
           >
-            {evento.imagemUrl && (
-              <img
-                src={evento.imagemUrl}
-                alt={evento.nome}
-                className='w-full h-40 object-cover'
-              />
-            )}
+            {/* ✅ Usa o componente de imagem */}
+            <ImagemEvento
+              imagemUrl={evento.imagemUrl}
+              alt={evento.nome}
+              className='w-full h-40 object-cover'
+            />
+
             <div className='p-4'>
               <h2 className='text-lg font-bold'>{evento.nome}</h2>
               <p className='text-gray-600'>
