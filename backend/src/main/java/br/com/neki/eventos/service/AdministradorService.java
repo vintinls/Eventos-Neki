@@ -2,6 +2,7 @@ package br.com.neki.eventos.service;
 
 import br.com.neki.eventos.dto.AdministradorDTO;
 import br.com.neki.eventos.dto.AdministradorRequestDTO;
+import br.com.neki.eventos.exception.EmailJaCadastradoException;
 import br.com.neki.eventos.model.Administrador;
 import br.com.neki.eventos.repository.AdministradorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,7 @@ public class AdministradorService {
 
     public AdministradorDTO cadastrar(AdministradorRequestDTO dto) {
         if (administradorRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new RuntimeException("Email já cadastrado");
+            throw new EmailJaCadastradoException("Já existe uma conta com esse e-mail.");
         }
 
         Administrador admin = new Administrador();
