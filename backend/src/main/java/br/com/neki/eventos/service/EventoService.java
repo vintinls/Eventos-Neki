@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,8 +29,6 @@ public class EventoService {
      * Cria um novo evento associado a um administrador usando upload de imagem (salva binário no banco).
      */
     public EventoDTO criarComUpload(EventoRequestDTO dto, MultipartFile imagem) throws IOException {
-        validarData(dto.getData());
-
         Administrador admin = administradorRepository.findById(dto.getAdministradorId())
                 .orElseThrow(() -> new EntityNotFoundException("Administrador não encontrado"));
 
@@ -54,8 +51,6 @@ public class EventoService {
      * Cria um novo evento associado a um administrador usando apenas uma URL.
      */
     public EventoDTO criarComUrl(EventoRequestDTO dto) {
-        validarData(dto.getData());
-
         Administrador admin = administradorRepository.findById(dto.getAdministradorId())
                 .orElseThrow(() -> new EntityNotFoundException("Administrador não encontrado"));
 
@@ -103,7 +98,6 @@ public class EventoService {
             evento.setLocalizacao(dto.getLocalizacao());
         }
         if (dto.getData() != null) {
-            validarData(dto.getData());
             evento.setData(dto.getData());
         }
 
@@ -131,15 +125,6 @@ public class EventoService {
     }
 
     /**
-     * Valida se a data é presente ou futura.
-     */
-    private void validarData(LocalDateTime data) {
-        if (data.isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("A data do evento deve ser no presente ou no futuro");
-        }
-    }
-
-    /**
      * Converte entidade para DTO.
      */
     private EventoDTO mapToDTO(Evento e) {
@@ -161,6 +146,5 @@ public class EventoService {
                 resolvedUrl
         );
     }
-
 
 }

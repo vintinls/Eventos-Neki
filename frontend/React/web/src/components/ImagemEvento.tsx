@@ -44,7 +44,7 @@ export default function ImagemEvento({
     <img src={src} alt={alt} className={className} />
   ) : (
     <div className='w-full h-40 bg-gray-200 flex items-center justify-center text-gray-500'>
-      Sem imagem
+      Imagem ou URL não Reconhecida
     </div>
   );
 }

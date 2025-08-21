@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 
 export default function Login() {
@@ -7,104 +7,109 @@ export default function Login() {
   const [senha, setSenha] = useState('');
   const [lembrar, setLembrar] = useState(false);
   const [erro, setErro] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showSenha, setShowSenha] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
+    setLoading(true);
 
     try {
-      // chamada para backend
-      const response = await api.post('/auth/login', {
-        email,
-        senha,
-      });
-
+      const response = await api.post('/auth/login', { email, senha });
       const { token, administrador } = response.data;
 
-      // salvar token
-      if (lembrar) {
-        localStorage.setItem('token', token);
-      } else {
-        sessionStorage.setItem('token', token);
-      }
+      if (lembrar) localStorage.setItem('token', token);
+      else sessionStorage.setItem('token', token);
 
-      // salvar dados do admin
       localStorage.setItem('admin', JSON.stringify(administrador));
-
-      console.log('Login realizado:', administrador);
-
-      // redirecionar para Home
       navigate('/home');
     } catch (err: any) {
       console.error('Erro no login:', err);
-      setErro('Email ou senha inválidos');
+      setErro('Email ou senha inválidos.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className='flex items-center justify-center min-h-screen bg-gray-100'>
-      <div className='w-full max-w-md bg-white rounded-lg shadow-lg p-8'>
-        <h1 className='text-2xl font-bold text-center text-blue-600 mb-6'>
+    <div className='flex min-h-screen items-center justify-center bg-gradient-to-br from-[#0A192F] to-[#112D4E] px-4'>
+      <div className='w-full max-w-md rounded-xl bg-[#0B1E34]/90 p-8 shadow-xl backdrop-blur-md'>
+        <h1 className='mb-6 text-center text-2xl font-bold text-[#00ADB5]'>
           Login do Administrador
         </h1>
+
+        {erro && (
+          <div className='mb-4 rounded-md bg-red-500/20 px-3 py-2 text-sm text-red-300'>
+            {erro}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className='space-y-4'>
           {/* Email */}
           <div>
-            <label className='block text-gray-700 mb-1'>Email</label>
+            <label className='block text-sm font-medium text-gray-200'>
+              Email
+            </label>
             <input
               type='email'
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className='w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
-              placeholder='Digite seu email'
               required
+              className='mt-1 w-full rounded-lg border border-gray-600 bg-[#0F2742] px-3 py-2 text-white placeholder-gray-400 outline-none focus:border-[#00ADB5] focus:ring-2 focus:ring-[#00ADB5]/50'
+              placeholder='seu@email.com'
             />
           </div>
 
           {/* Senha */}
           <div>
-            <label className='block text-gray-700 mb-1'>Senha</label>
-            <input
-              type='password'
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              className='w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500'
-              placeholder='Digite sua senha'
-              required
-            />
+            <label className='block text-sm font-medium text-gray-200'>
+              Senha
+            </label>
+            <div className='relative'>
+              <input
+                type={showSenha ? 'text' : 'password'}
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                required
+                className='mt-1 w-full rounded-lg border border-gray-600 bg-[#0F2742] px-3 py-2 text-white placeholder-gray-400 outline-none focus:border-[#00ADB5] focus:ring-2 focus:ring-[#00ADB5]/50'
+                placeholder='Digite sua senha'
+              />
+              <button
+                type='button'
+                onClick={() => setShowSenha((s) => !s)}
+                className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white'
+              >
+                {showSenha ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
 
-          {/* Checkbox lembrar senha */}
-          <div className='flex items-center'>
-            <input
-              type='checkbox'
-              checked={lembrar}
-              onChange={(e) => setLembrar(e.target.checked)}
-              className='mr-2'
-            />
-            <span className='text-gray-600'>Gravar senha</span>
+          {/* Lembrar senha */}
+          <div className='flex items-center justify-between text-sm text-gray-300'>
+            <label className='flex items-center gap-2'>
+              <input
+                type='checkbox'
+                checked={lembrar}
+                onChange={(e) => setLembrar(e.target.checked)}
+                className='h-4 w-4 rounded border-gray-500 bg-[#0F2742] text-[#00ADB5] focus:ring-[#00ADB5]'
+              />
+              Gravar senha
+            </label>
+
+            <Link to='/register' className='text-[#00ADB5] hover:underline'>
+              Cadastre-se
+            </Link>
           </div>
 
-          {/* Erro */}
-          {erro && <p className='text-red-600 text-sm'>{erro}</p>}
-
-          {/* Botão Entrar */}
+          {/* Botão */}
           <button
             type='submit'
-            className='w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition'
+            disabled={loading}
+            className='w-full rounded-lg bg-[#00ADB5] px-4 py-2 font-semibold text-white shadow-md transition hover:bg-[#00949A] disabled:opacity-60'
           >
-            Entrar
-          </button>
-
-          {/* Botão Cadastrar-se */}
-          <button
-            type='button'
-            className='w-full border border-blue-600 text-blue-600 font-semibold py-2 px-4 rounded-lg hover:bg-blue-50 transition'
-            onClick={() => navigate('/register')}
-          >
-            Cadastrar-se
+            {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
       </div>
