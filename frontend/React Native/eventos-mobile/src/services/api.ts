@@ -1,9 +1,9 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Base URL do seu backend (ajuste para o endereço real do backend)
+// Base URL do backend - precisa ter http:// e a porta
 const api = axios.create({
-  baseURL: 'http://localhost:8080', // coloque o IP da sua máquina
+  baseURL: 'http://10.0.2.2:8080',
 });
 
 // Interceptador para adicionar o token em cada requisição

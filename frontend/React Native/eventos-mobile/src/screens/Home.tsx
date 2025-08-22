@@ -6,10 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import EventoCard from '../components/EventoCard';
+import EventoModal from '../components/EventoModal';
+import EventoEditModal from '../components/EventoEditModal';
 
 interface Evento {
   id: number;
@@ -20,14 +23,19 @@ interface Evento {
 }
 
 export default function Home() {
-  const { admin, logout } = useContext(AuthContext);
+  const { admin, token, logout } = useContext(AuthContext);
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
 
+  // Buscar eventos do admin
   const fetchEventos = async () => {
     try {
-      if (!admin) return;
-      const response = await api.get(`/eventos/admin/${admin.id}`);
+      if (!admin || !token) return;
+      const response = await api.get(`/eventos/admin/${admin.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setEventos(response.data);
     } catch (err) {
       console.error('Erro ao buscar eventos:', err);
@@ -39,6 +47,74 @@ export default function Home() {
   useEffect(() => {
     fetchEventos();
   }, []);
+
+  // Adicionar evento (apenas com URL)
+  const handleAddEvento = async (dados: {
+    nome: string;
+    data: string;
+    localizacao: string;
+    imagemUrl: string;
+  }) => {
+    try {
+      if (!token) return;
+
+      await api.post(
+        '/eventos/url',
+        {
+          nome: dados.nome,
+          data: dados.data,
+          localizacao: dados.localizacao,
+          imagemUrl: dados.imagemUrl,
+          administradorId: admin?.id,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setShowAddModal(false);
+      fetchEventos();
+    } catch (err: any) {
+      console.error('❌ Erro ao adicionar evento:', err);
+      Alert.alert('Erro', 'Não foi possível salvar o evento.');
+    }
+  };
+
+  // Excluir evento
+  const handleDelete = async (id: number) => {
+    try {
+      if (!token) return;
+      await api.delete(`/eventos/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchEventos();
+    } catch (err) {
+      console.error('Erro ao excluir evento:', err);
+      Alert.alert('Erro', 'Não foi possível excluir o evento.');
+    }
+  };
+
+  // Salvar edição de evento
+  const handleEditSave = async (
+    id: number,
+    novaData: string,
+    novaLocal: string
+  ) => {
+    try {
+      if (!token) return;
+      await api.put(
+        `/eventos/${id}`,
+        {
+          data: novaData,
+          localizacao: novaLocal,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setEventoEditando(null);
+      fetchEventos();
+    } catch (err) {
+      console.error('Erro ao editar evento:', err);
+      Alert.alert('Erro', 'Não foi possível editar o evento.');
+    }
+  };
 
   if (loading) {
     return (
@@ -61,8 +137,8 @@ export default function Home() {
           renderItem={({ item }) => (
             <EventoCard
               evento={item}
-              onEdit={() => console.log('Editar', item.id)}
-              onDelete={() => console.log('Excluir', item.id)}
+              onEdit={() => setEventoEditando(item)}
+              onDelete={() => handleDelete(item.id)}
             />
           )}
         />
@@ -71,7 +147,7 @@ export default function Home() {
       {/* Botão Adicionar Evento */}
       <TouchableOpacity
         style={styles.buttonAdd}
-        onPress={() => console.log('Abrir modal')}
+        onPress={() => setShowAddModal(true)}
       >
         <Text style={styles.buttonAddText}>+ Adicionar Evento</Text>
       </TouchableOpacity>
@@ -80,6 +156,21 @@ export default function Home() {
       <TouchableOpacity style={styles.buttonLogout} onPress={logout}>
         <Text style={styles.buttonLogoutText}>Sair</Text>
       </TouchableOpacity>
+
+      {/* Modal de adicionar evento */}
+      <EventoModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSave={handleAddEvento}
+      />
+
+      {/* Modal de edição de evento */}
+      <EventoEditModal
+        visible={eventoEditando !== null}
+        evento={eventoEditando}
+        onClose={() => setEventoEditando(null)}
+        onSave={handleEditSave}
+      />
     </View>
   );
 }
