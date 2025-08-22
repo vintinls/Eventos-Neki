@@ -20,7 +20,7 @@ export default function EventoCard({ evento, onEdit, onDelete }: Props) {
       <ImagemEvento
         imagemUrl={evento.imagemUrl}
         alt={evento.nome}
-        className='w-full h-44 object-cover'
+        className='w-full h-70 object-cover'
       />
 
       <div className='p-5 text-white'>

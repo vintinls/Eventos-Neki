@@ -17,6 +17,9 @@ export default function HomeEventos() {
   const [showModal, setShowModal] = useState(false);
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6; // qtd de eventos por página
+
   const admin = JSON.parse(localStorage.getItem('admin') || '{}');
   const token = localStorage.getItem('token');
 
@@ -34,6 +37,18 @@ export default function HomeEventos() {
   useEffect(() => {
     fetchEventos();
   }, []);
+
+  // Paginação
+  const indexOfLast = currentPage * itemsPerPage;
+  const indexOfFirst = indexOfLast - itemsPerPage;
+  const currentEventos = eventos.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(eventos.length / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   const handleAddEvento = async (dados: any) => {
     try {
@@ -133,16 +148,39 @@ export default function HomeEventos() {
           Nenhum evento cadastrado ainda.
         </p>
       ) : (
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
-          {eventos.map((evento) => (
-            <EventoCard
-              key={evento.id}
-              evento={evento}
-              onEdit={() => setEventoEditando(evento)}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
+        <>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'>
+            {currentEventos.map((evento) => (
+              <EventoCard
+                key={evento.id}
+                evento={evento}
+                onEdit={() => setEventoEditando(evento)}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+
+          {/* Paginação */}
+          <div className='flex justify-center mt-8 space-x-2'>
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className='px-3 py-1 bg-[#00ADB5] text-white rounded disabled:opacity-50'
+            >
+              Anterior
+            </button>
+            <span className='text-white px-4 py-1'>
+              Página {currentPage} de {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className='px-3 py-1 bg-[#00ADB5] text-white rounded disabled:opacity-50'
+            >
+              Próxima
+            </button>
+          </div>
+        </>
       )}
 
       {showModal && (
