@@ -12,22 +12,31 @@ interface Evento {
   imagemUrl?: string;
 }
 
+interface NovoEvento {
+  nome: string;
+  data: string;
+  localizacao: string;
+  imagemUrl?: string;
+  imagemFile?: File | null;
+  modoImagem: 'url' | 'upload';
+}
+
 export default function HomeEventos() {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6; // qtd de eventos por página
+  const itemsPerPage = 6;
 
-  const admin = JSON.parse(localStorage.getItem('admin') || '{}');
-  const token = localStorage.getItem('token');
+  const admin = JSON.parse(
+    localStorage.getItem('admin') || sessionStorage.getItem('admin') || '{}'
+  );
 
   const fetchEventos = async () => {
     try {
-      const response = await api.get(`/eventos/admin/${admin.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (!admin?.id) return;
+      const response = await api.get(`/eventos/admin/${admin.id}`);
       setEventos(response.data);
     } catch (err) {
       console.error('Erro ao buscar eventos:', err);
@@ -38,34 +47,27 @@ export default function HomeEventos() {
     fetchEventos();
   }, []);
 
-  // Paginação
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
   const currentEventos = eventos.slice(indexOfFirst, indexOfLast);
   const totalPages = Math.ceil(eventos.length / itemsPerPage);
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  const handleAddEvento = async (dados: any) => {
+  const handleAddEvento = async (dados: NovoEvento) => {
     try {
       const dataFormatada = dados.data + 'T00:00:00';
 
       if (dados.modoImagem === 'url') {
-        await api.post(
-          '/eventos/url',
-          {
-            nome: dados.nome,
-            data: dataFormatada,
-            localizacao: dados.localizacao,
-            imagemUrl: dados.imagemUrl,
-            administradorId: admin.id,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await api.post('/eventos/url', {
+          nome: dados.nome,
+          data: dataFormatada,
+          localizacao: dados.localizacao,
+          imagemUrl: dados.imagemUrl,
+          administradorId: admin.id,
+        });
       } else {
         const formData = new FormData();
         formData.append(
@@ -85,10 +87,7 @@ export default function HomeEventos() {
         if (dados.imagemFile) formData.append('imagem', dados.imagemFile);
 
         await api.post('/eventos/upload', formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
 
@@ -101,9 +100,7 @@ export default function HomeEventos() {
 
   const handleDelete = async (id: number) => {
     try {
-      await api.delete(`/eventos/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/eventos/${id}`);
       fetchEventos();
     } catch (err) {
       console.error('Erro ao excluir evento:', err);
@@ -117,11 +114,10 @@ export default function HomeEventos() {
   ) => {
     try {
       const dataFormatada = novaData + 'T00:00:00';
-      await api.put(
-        `/eventos/${id}`,
-        { data: dataFormatada, localizacao: novaLocal },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/eventos/${id}`, {
+        data: dataFormatada,
+        localizacao: novaLocal,
+      });
       fetchEventos();
     } catch (err) {
       console.error('Erro ao editar evento:', err);
@@ -131,7 +127,7 @@ export default function HomeEventos() {
   return (
     <div className='min-h-screen bg-gradient-to-br from-[#0A192F] to-[#112D4E] px-6 py-10'>
       <h1 className='text-3xl font-bold text-[#00ADB5] mb-8 text-center'>
-        Eventos de {admin.nome}
+        Eventos de {admin?.nome ?? 'Administrador'}
       </h1>
 
       <div className='flex justify-center mb-8'>
@@ -160,7 +156,6 @@ export default function HomeEventos() {
             ))}
           </div>
 
-          {/* Paginação */}
           <div className='flex justify-center mt-8 space-x-2'>
             <button
               onClick={() => handlePageChange(currentPage - 1)}
@@ -174,7 +169,7 @@ export default function HomeEventos() {
             </span>
             <button
               onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || totalPages === 0}
               className='px-3 py-1 bg-[#00ADB5] text-white rounded disabled:opacity-50'
             >
               Próxima

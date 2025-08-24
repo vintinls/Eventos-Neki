@@ -57,7 +57,6 @@ export default function EventoModal({ onClose, onSave }: Props) {
         </h2>
 
         <form onSubmit={handleSubmit} className='space-y-4'>
-          {/* Nome */}
           <div>
             <input
               type='text'
@@ -71,7 +70,6 @@ export default function EventoModal({ onClose, onSave }: Props) {
             )}
           </div>
 
-          {/* Data */}
           <div>
             <input
               type='date'
@@ -84,7 +82,6 @@ export default function EventoModal({ onClose, onSave }: Props) {
             )}
           </div>
 
-          {/* Localização */}
           <div>
             <input
               type='text'
@@ -98,14 +95,13 @@ export default function EventoModal({ onClose, onSave }: Props) {
             )}
           </div>
 
-          {/* Escolha imagem */}
           <div className='flex space-x-6 text-gray-300'>
             <label className='flex items-center gap-2'>
               <input
                 type='radio'
                 checked={modoImagem === 'url'}
                 onChange={() => setModoImagem('url')}
-              />{' '}
+              />
               URL
             </label>
             <label className='flex items-center gap-2'>
@@ -113,12 +109,11 @@ export default function EventoModal({ onClose, onSave }: Props) {
                 type='radio'
                 checked={modoImagem === 'upload'}
                 onChange={() => setModoImagem('upload')}
-              />{' '}
+              />
               Upload
             </label>
           </div>
 
-          {/* Imagem */}
           {modoImagem === 'url' ? (
             <div>
               <input

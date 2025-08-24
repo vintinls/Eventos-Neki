@@ -10,7 +10,7 @@ interface Evento {
 
 interface Props {
   evento: Evento;
-  onEdit: () => void; // agora só abre o modal
+  onEdit: () => void; // abre modal de edição
   onDelete: (id: number) => void;
 }
 
@@ -26,12 +26,11 @@ export default function EventoCard({ evento, onEdit, onDelete }: Props) {
       <div className='p-5 text-white'>
         <h2 className='text-xl font-bold text-[#00ADB5]'>{evento.nome}</h2>
         <p className='text-gray-300'>
-          📅 {new Date(evento.data).toLocaleDateString()}
+          {new Date(evento.data).toLocaleDateString()}
         </p>
-        <p className='text-gray-300'>📍 {evento.localizacao}</p>
+        <p className='text-gray-300'>{evento.localizacao}</p>
 
         <div className='mt-4 flex gap-3'>
-          {/* Editar agora abre o modal */}
           <button
             onClick={onEdit}
             className='px-3 py-1 text-sm rounded bg-[#112D4E] hover:bg-[#00ADB5] transition'

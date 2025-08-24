@@ -18,7 +18,7 @@ export default function Register() {
     setSucesso('');
 
     if (senha !== confirmarSenha) {
-      setErro('As senhas não coincidem!');
+      setErro('As senhas não coincidem.');
       return;
     }
 
@@ -33,18 +33,19 @@ export default function Register() {
       console.log('Cadastro realizado:', response.data);
       setSucesso('Cadastro realizado com sucesso!');
 
-      // Redireciona para login após 2 segundos
       setTimeout(() => navigate('/login'), 2000);
-    } catch (err: any) {
-      console.error('Erro no cadastro:', err);
-
-      // Se o backend retorna status 400/409 para email já usado
-      if (err.response && err.response.status === 400) {
-        setErro('Este email já está cadastrado. Tente outro.');
-      } else if (err.response && err.response.status === 409) {
-        setErro('Email já existente. Por favor, escolha outro.');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const response = (err as any).response;
+        if (response?.status === 400) {
+          setErro('Este email já está cadastrado. Tente outro.');
+        } else if (response?.status === 409) {
+          setErro('Email já existente. Por favor, escolha outro.');
+        } else {
+          setErro('Erro ao cadastrar. Verifique os dados.');
+        }
       } else {
-        setErro('Erro ao cadastrar. Verifique os dados.');
+        setErro('Erro inesperado. Tente novamente.');
       }
     } finally {
       setLoading(false);
@@ -59,7 +60,6 @@ export default function Register() {
         </h1>
 
         <form onSubmit={handleSubmit} className='space-y-4'>
-          {/* Nome */}
           <div>
             <label className='block text-sm font-medium text-gray-200'>
               Nome
@@ -74,7 +74,6 @@ export default function Register() {
             />
           </div>
 
-          {/* Email */}
           <div>
             <label className='block text-sm font-medium text-gray-200'>
               Email
@@ -89,7 +88,6 @@ export default function Register() {
             />
           </div>
 
-          {/* Senha */}
           <div>
             <label className='block text-sm font-medium text-gray-200'>
               Senha
@@ -104,7 +102,6 @@ export default function Register() {
             />
           </div>
 
-          {/* Confirmar Senha */}
           <div>
             <label className='block text-sm font-medium text-gray-200'>
               Confirmar Senha
@@ -119,7 +116,6 @@ export default function Register() {
             />
           </div>
 
-          {/* Mensagens */}
           {erro && (
             <p className='text-red-400 text-sm bg-red-500/20 rounded-md px-3 py-1'>
               {erro}
@@ -131,7 +127,6 @@ export default function Register() {
             </p>
           )}
 
-          {/* Botões */}
           <div className='space-y-2'>
             <button
               type='submit'
@@ -141,7 +136,6 @@ export default function Register() {
               {loading ? 'Cadastrando...' : 'Cadastrar'}
             </button>
 
-            {/* Botão voltar para login */}
             <button
               type='button'
               onClick={() => navigate('/login')}

@@ -20,13 +20,15 @@ export default function Login() {
       const response = await api.post('/auth/login', { email, senha });
       const { token, administrador } = response.data;
 
-      if (lembrar) localStorage.setItem('token', token);
-      else sessionStorage.setItem('token', token);
+      if (lembrar) {
+        localStorage.setItem('token', token);
+      } else {
+        sessionStorage.setItem('token', token);
+      }
 
       localStorage.setItem('admin', JSON.stringify(administrador));
       navigate('/home');
-    } catch (err: any) {
-      console.error('Erro no login:', err);
+    } catch {
       setErro('Email ou senha inválidos.');
     } finally {
       setLoading(false);
@@ -47,7 +49,6 @@ export default function Login() {
         )}
 
         <form onSubmit={handleSubmit} className='space-y-4'>
-          {/* Email */}
           <div>
             <label className='block text-sm font-medium text-gray-200'>
               Email
@@ -62,7 +63,6 @@ export default function Login() {
             />
           </div>
 
-          {/* Senha */}
           <div>
             <label className='block text-sm font-medium text-gray-200'>
               Senha
@@ -81,12 +81,11 @@ export default function Login() {
                 onClick={() => setShowSenha((s) => !s)}
                 className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white'
               >
-                {showSenha ? '🙈' : '👁️'}
+                {showSenha ? 'Ocultar' : 'Mostrar'}
               </button>
             </div>
           </div>
 
-          {/* Lembrar senha */}
           <div className='flex items-center justify-between text-sm text-gray-300'>
             <label className='flex items-center gap-2'>
               <input
@@ -103,7 +102,6 @@ export default function Login() {
             </Link>
           </div>
 
-          {/* Botão */}
           <button
             type='submit'
             disabled={loading}
