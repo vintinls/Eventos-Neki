@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { useNavigation } from '@react-navigation/native';
-import { useContext } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../context/AuthContext';
 
 interface LoginForm {
@@ -21,17 +21,41 @@ export default function Login() {
   const { login } = useContext(AuthContext);
   const navigation = useNavigation<any>();
 
-  const { control, handleSubmit } = useForm<LoginForm>();
+  const { control, handleSubmit, setValue } = useForm<LoginForm>();
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
   const [lembrar, setLembrar] = useState(false);
   const [showSenha, setShowSenha] = useState(false);
+
+  // 🔹 Carregar credenciais salvas
+  useEffect(() => {
+    const loadSaved = async () => {
+      const savedEmail = await AsyncStorage.getItem('savedEmail');
+      const savedSenha = await AsyncStorage.getItem('savedSenha');
+      if (savedEmail && savedSenha) {
+        setValue('email', savedEmail);
+        setValue('senha', savedSenha);
+        setLembrar(true);
+      }
+    };
+    loadSaved();
+  }, []);
 
   const onSubmit = async (data: LoginForm) => {
     setErro('');
     setLoading(true);
     try {
       await login(data.email, data.senha);
+
+      // 🔹 Salvar ou limpar credenciais
+      if (lembrar) {
+        await AsyncStorage.setItem('savedEmail', data.email);
+        await AsyncStorage.setItem('savedSenha', data.senha);
+      } else {
+        await AsyncStorage.removeItem('savedEmail');
+        await AsyncStorage.removeItem('savedSenha');
+      }
+
       navigation.reset({
         index: 0,
         routes: [{ name: 'Home' }],
@@ -90,6 +114,16 @@ export default function Login() {
         <TouchableOpacity onPress={() => setShowSenha((s) => !s)}>
           <Text style={styles.toggleSenha}>
             {showSenha ? '🙈 Ocultar' : '👁️ Mostrar'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* 🔹 Checkbox Lembrar-me */}
+        <TouchableOpacity
+          onPress={() => setLembrar((prev) => !prev)}
+          style={styles.checkboxContainer}
+        >
+          <Text style={{ color: '#fff' }}>
+            {lembrar ? '☑️ ' : '⬜ '} Lembrar-me
           </Text>
         </TouchableOpacity>
 
@@ -161,6 +195,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 12,
     textAlign: 'right',
+  },
+  checkboxContainer: {
+    marginBottom: 12,
   },
   button: {
     backgroundColor: '#00ADB5',

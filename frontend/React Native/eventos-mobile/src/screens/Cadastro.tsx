@@ -22,14 +22,48 @@ export default function Cadastro() {
   const [sucesso, setSucesso] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const validate = () => {
+    if (
+      !nome.trim() ||
+      !email.trim() ||
+      !senha.trim() ||
+      !confirmarSenha.trim()
+    ) {
+      setErro('Todos os campos são obrigatórios.');
+      return false;
+    }
+
+    // regex simples para validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErro('Digite um email válido.');
+      return false;
+    }
+
+    // regex para senha forte
+    const senhaRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&._\-])[A-Za-z\d@$!%*?&._\-]{8,}$/;
+
+    if (!senhaRegex.test(senha)) {
+      setErro(
+        'A senha deve ter no mínimo 8 caracteres, incluindo letra maiúscula, letra minúscula, número e caractere especial.'
+      );
+      return false;
+    }
+
+    if (senha !== confirmarSenha) {
+      setErro('As senhas não coincidem.');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async () => {
     setErro('');
     setSucesso('');
 
-    if (senha !== confirmarSenha) {
-      setErro('As senhas não coincidem!');
-      return;
-    }
+    if (!validate()) return;
 
     try {
       setLoading(true);
