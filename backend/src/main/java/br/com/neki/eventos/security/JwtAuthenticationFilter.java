@@ -35,7 +35,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String username = null;
         String jwt = null;
 
-        // Verifica se o header Authorization contém o token JWT
         if (authHeader != null && authHeader.startsWith(prefix)) {
             jwt = authHeader.substring(prefix.length());
 
@@ -43,39 +42,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtService.isTokenValid(jwt)) {
                     username = jwtService.extractUsername(jwt);
                 } else {
-                    logger.warn("Token JWT inválido para request: " + request.getRequestURI());
+                    logger.warn("🔒 Token JWT inválido para request: " + request.getRequestURI());
                 }
             } catch (Exception e) {
-                logger.error("Erro ao validar JWT: " + e.getMessage());
+                logger.error("❌ Erro ao validar JWT: " + e.getMessage());
             }
         }
 
-        // Se encontrou um usuário no token e não há autenticação no contexto, autentica
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails user = userDetailsService.loadUserByUsername(username);
+            try {
+                UserDetails user = userDetailsService.loadUserByUsername(username);
 
-            if (user != null) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-                logger.info("Usuário autenticado: " + username + " para " + request.getRequestURI());
+                if (user != null) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    logger.info("✅ Usuário autenticado: " + username + " para " + request.getRequestURI());
+                } else {
+                    logger.warn("⚠️ Token válido, mas usuário não encontrado: " + username);
+                }
+            } catch (Exception ex) {
+                logger.error("❌ Falha ao carregar usuário '" + username + "': " + ex.getMessage());
             }
         }
 
-        // Continua a cadeia de filtros
         chain.doFilter(request, response);
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
-
-        // Ignora autenticação para endpoints públicos
-        return path.startsWith("/auth") ||
-               path.startsWith("/swagger") ||
-               path.startsWith("/v3/api-docs") ||
-               request.getMethod().equalsIgnoreCase("OPTIONS"); // ignora preflight CORS
+        return path.startsWith("/auth")
+                || path.startsWith("/swagger")
+                || path.startsWith("/v3/api-docs")
+                || request.getMethod().equalsIgnoreCase("OPTIONS");
     }
 }

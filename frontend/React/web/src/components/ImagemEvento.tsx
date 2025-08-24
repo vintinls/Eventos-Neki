@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import api from '../services/api';
 
 interface ImagemEventoProps {
   imagemUrl?: string;
@@ -13,38 +12,69 @@ export default function ImagemEvento({
   className,
 }: ImagemEventoProps) {
   const [src, setSrc] = useState<string>('');
+  const [failed, setFailed] = useState<boolean>(false);
 
   useEffect(() => {
+    let revoked: string | null = null;
+    setSrc('');
+    setFailed(false);
+
     const loadImage = async () => {
       if (!imagemUrl) return;
 
-      // URL externa → usa direto
       if (imagemUrl.startsWith('http')) {
         setSrc(imagemUrl);
         return;
       }
 
       try {
-        // Usa axios com token automático
-        const response = await api.get(imagemUrl, {
-          responseType: 'blob',
+        const token =
+          localStorage.getItem('token') || sessionStorage.getItem('token');
+        const response = await fetch(`http://localhost:8080${imagemUrl}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
-        const blob = response.data;
-        setSrc(URL.createObjectURL(blob));
-      } catch (error) {
-        console.error('Erro ao carregar imagem:', error);
+        if (!response.ok) {
+          setFailed(true);
+          return;
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        revoked = url;
+        setSrc(url);
+      } catch {
+        setFailed(true);
       }
     };
 
     loadImage();
+
+    return () => {
+      if (revoked) URL.revokeObjectURL(revoked);
+    };
   }, [imagemUrl]);
 
-  return src ? (
-    <img src={src} alt={alt} className={className} />
-  ) : (
-    <div className='w-full h-40 bg-gray-200 flex items-center justify-center text-gray-500'>
-      Imagem ou URL não Reconhecida
-    </div>
+  if (failed || !src) {
+    return (
+      <div
+        className={`flex items-center justify-center text-gray-300 text-sm italic bg-gray-700/40 ${className}`}
+      >
+        Não foi possível carregar a imagem
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      loading='lazy'
+      onError={() => {
+        setFailed(true);
+        setSrc('');
+      }}
+    />
   );
 }

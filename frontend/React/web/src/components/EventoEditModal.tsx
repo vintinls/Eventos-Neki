@@ -42,7 +42,6 @@ export default function EventoEditModal({ evento, onClose, onSave }: Props) {
         </h2>
 
         <form onSubmit={handleSubmit} className='space-y-4'>
-          {/* Nome (só exibe, não editável) */}
           <div>
             <input
               type='text'
@@ -52,7 +51,6 @@ export default function EventoEditModal({ evento, onClose, onSave }: Props) {
             />
           </div>
 
-          {/* Data */}
           <div>
             <input
               type='date'
@@ -65,7 +63,6 @@ export default function EventoEditModal({ evento, onClose, onSave }: Props) {
             )}
           </div>
 
-          {/* Localização */}
           <div>
             <input
               type='text'

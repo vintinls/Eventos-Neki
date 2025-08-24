@@ -7,7 +7,7 @@ import Header from '../components/Header';
 export default function AppRoutes() {
   return (
     <BrowserRouter>
-      <Header /> {/* Header fixo em todas as páginas */}
+      <Header />
       <Routes>
         <Route path='/' element={<Navigate to='/login' />} />
         <Route path='/login' element={<Login />} />
