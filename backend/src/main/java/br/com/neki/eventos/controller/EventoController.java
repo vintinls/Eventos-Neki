@@ -4,6 +4,7 @@ import br.com.neki.eventos.dto.EventoDTO;
 import br.com.neki.eventos.dto.EventoRequestDTO;
 import br.com.neki.eventos.dto.EventoUpdateRequestDTO;
 import br.com.neki.eventos.service.EventoService;
+import com.fasterxml.jackson.databind.ObjectMapper; // <-- importante
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,11 +25,18 @@ public class EventoController {
     @Autowired
     private EventoService eventoService;
 
+    @Autowired
+    private ObjectMapper objectMapper; // <-- injetado para converter String -> DTO
+
     // 🔹 Criar evento com upload de arquivo (JSON + imagem binária no banco)
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EventoDTO> criarComUpload(
-            @RequestPart("dados") @Valid EventoRequestDTO request,
-            @RequestPart(value = "imagem", required = false) MultipartFile imagem) throws IOException {
+            @RequestPart("dados") String dadosJson, // <-- RECEBE COMO STRING
+            @RequestPart(value = "imagem", required = false) MultipartFile imagem
+    ) throws IOException {
+
+        // Converte manualmente para o DTO (independente do content-type da parte)
+        EventoRequestDTO request = objectMapper.readValue(dadosJson, EventoRequestDTO.class);
 
         return ResponseEntity.ok(eventoService.criarComUpload(request, imagem));
     }
@@ -89,6 +97,4 @@ public class EventoController {
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(imagem);
     }
-
-
 }
