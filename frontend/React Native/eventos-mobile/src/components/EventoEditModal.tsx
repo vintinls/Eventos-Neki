@@ -2,20 +2,21 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   Modal,
   Alert,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+
+import DatePickerField from '../components/modal/DatePickerField';
+import FormInput from '../components/modal/FormInput';
+import ModalButtons from '../components/modal/ModalButtons';
 
 export interface Evento {
   id: number;
   nome: string;
-  data: string; // ISO ex.: "2025-08-24T15:00:00" ou "2025-08-24"
+  data: string;
   localizacao: string;
   imagemUrl?: string;
 }
@@ -51,13 +52,12 @@ export default function EventoEditModal({
   onSave,
 }: Props) {
   const [dateObj, setDateObj] = useState<Date>(new Date());
-  const [dataTexto, setDataTexto] = useState<string>(''); // exibição "YYYY-MM-DD"
+  const [dataTexto, setDataTexto] = useState<string>('');
   const [localizacao, setLocalizacao] = useState<string>('');
   const [errors, setErrors] = useState<{ data?: string; localizacao?: string }>(
     {}
   );
-
-  const [showPicker, setShowPicker] = useState<boolean>(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (evento) {
@@ -66,9 +66,6 @@ export default function EventoEditModal({
       setDataTexto(toYYYYMMDD(base));
       setLocalizacao(evento.localizacao || '');
       setErrors({});
-      setShowPicker(Platform.OS === 'ios');
-    } else {
-      setShowPicker(false);
     }
   }, [evento, visible]);
 
@@ -81,24 +78,20 @@ export default function EventoEditModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const onChangeDate = (_event: any, selected?: Date) => {
-    if (!selected) {
-      if (Platform.OS === 'android') setShowPicker(false);
-      return;
-    }
-    setDateObj(selected);
-    setDataTexto(toYYYYMMDD(selected));
-    if (Platform.OS === 'android') setShowPicker(false);
-  };
-
   const handleSave = () => {
-    if (!validate()) return;
+    if (!validate() || !evento) return;
     try {
-      if (!evento) return;
-      onSave(evento.id, dataTexto, localizacao);
+      setSaving(true);
+
+      const dataFinal = toYYYYMMDD(dateObj);
+
+      onSave(evento.id, dataFinal, localizacao);
+
+      setSaving(false);
     } catch (err) {
       console.error('Erro ao editar evento:', err);
       Alert.alert('Erro', 'Não foi possível editar o evento.');
+      setSaving(false);
     }
   };
 
@@ -119,80 +112,35 @@ export default function EventoEditModal({
           <View style={styles.modal}>
             <Text style={styles.title}>Editar Evento</Text>
 
-            {/* Nome somente leitura */}
-            <TextInput
-              style={[styles.input, styles.readonlyInput]}
+            <FormInput
+              placeholder='Nome do evento'
               value={evento.nome}
+              onChangeText={() => {}}
               editable={false}
-              pointerEvents='none'
             />
 
-            <Text style={styles.label}>Data</Text>
+            <DatePickerField
+              date={dateObj}
+              onChange={(d, str) => {
+                setDateObj(d);
+                setDataTexto(str);
+              }}
+              error={errors.data}
+            />
 
-            {Platform.OS === 'android' ? (
-              <>
-                <TouchableOpacity
-                  onPress={() => setShowPicker(true)}
-                  activeOpacity={0.8}
-                  style={[styles.input, styles.touchableInput]}
-                >
-                  <Text style={styles.touchableInputText}>
-                    {dataTexto || 'Selecionar data'}
-                  </Text>
-                </TouchableOpacity>
-
-                {errors.data ? (
-                  <Text style={styles.error}>{errors.data}</Text>
-                ) : null}
-
-                {showPicker && (
-                  <DateTimePicker
-                    value={dateObj}
-                    mode='date'
-                    display='calendar'
-                    onChange={onChangeDate}
-                  />
-                )}
-              </>
-            ) : (
-              <>
-                <View style={[styles.input, styles.iosPickerContainer]}>
-                  <DateTimePicker
-                    value={dateObj}
-                    mode='date'
-                    display='inline'
-                    onChange={onChangeDate}
-                    style={styles.iosPicker}
-                  />
-                </View>
-                <Text style={styles.helperText}>{dataTexto}</Text>
-                {errors.data ? (
-                  <Text style={styles.error}>{errors.data}</Text>
-                ) : null}
-              </>
-            )}
-
-            <Text style={[styles.label, { marginTop: 10 }]}>Localização</Text>
-            <TextInput
-              style={styles.input}
+            <FormInput
               placeholder='Localização'
-              placeholderTextColor='#aaa'
               value={localizacao}
               onChangeText={setLocalizacao}
+              error={errors.localizacao}
             />
-            {errors.localizacao ? (
-              <Text style={styles.error}>{errors.localizacao}</Text>
-            ) : null}
 
-            <View style={styles.buttons}>
-              <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-                <Text style={styles.cancelText}>Cancelar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveText}>Salvar</Text>
-              </TouchableOpacity>
-            </View>
+            <ModalButtons
+              onCancel={onClose}
+              onSave={handleSave}
+              canSave={!!dataTexto.trim() && !!localizacao.trim()}
+              saving={saving}
+            />
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -223,73 +171,5 @@ const styles = StyleSheet.create({
     color: '#00ADB5',
     textAlign: 'center',
     marginBottom: 16,
-  },
-  label: {
-    color: '#9BB0C8',
-    marginBottom: 6,
-    fontWeight: '600',
-  },
-  input: {
-    backgroundColor: '#0F2742',
-    color: '#fff',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#233A57',
-    marginBottom: 8,
-  },
-  readonlyInput: {
-    backgroundColor: '#1E2A3C',
-    color: '#AAB1BA',
-  },
-  error: {
-    color: '#ff6b6b',
-    marginBottom: 6,
-  },
-  buttons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-    gap: 12,
-  },
-  cancelButton: {
-    borderColor: '#aaa',
-    borderWidth: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    flex: 1,
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: '#aaa',
-    fontWeight: 'bold',
-  },
-  saveButton: {
-    backgroundColor: '#00ADB5',
-    paddingVertical: 12,
-    borderRadius: 8,
-    flex: 1,
-    alignItems: 'center',
-  },
-  saveText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  touchableInput: {
-    justifyContent: 'center',
-  },
-  touchableInputText: {
-    color: '#fff',
-  },
-  iosPickerContainer: {
-    padding: 0,
-    overflow: 'hidden',
-  },
-  iosPicker: {
-    width: '100%',
-  },
-  helperText: {
-    color: '#9BB0C8',
-    marginBottom: 6,
   },
 });

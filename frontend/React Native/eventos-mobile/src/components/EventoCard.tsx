@@ -1,4 +1,3 @@
-// src/components/EventoCard.tsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import ImagemEvento from './ImagemEvento';
@@ -29,9 +28,9 @@ export default function EventoCard({ evento, onEdit, onDelete }: Props) {
       <View style={styles.info}>
         <Text style={styles.eventName}>{evento.nome}</Text>
         <Text style={styles.eventInfo}>
-          📅 {new Date(evento.data).toLocaleDateString()}
+          {new Date(evento.data).toLocaleDateString()}
         </Text>
-        <Text style={styles.eventInfo}>📍 {evento.localizacao}</Text>
+        <Text style={styles.eventInfo}>{evento.localizacao}</Text>
 
         <View style={styles.actions}>
           <TouchableOpacity style={styles.editButton} onPress={onEdit}>
@@ -77,16 +76,19 @@ const styles = StyleSheet.create({
   },
   editButton: {
     backgroundColor: '#112D4E',
-    padding: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 6,
   },
   deleteButton: {
     backgroundColor: '#B00020',
-    padding: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 6,
   },
   actionText: {
     color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

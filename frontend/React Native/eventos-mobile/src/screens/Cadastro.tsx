@@ -33,14 +33,12 @@ export default function Cadastro() {
       return false;
     }
 
-    // regex simples para validar email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setErro('Digite um email válido.');
       return false;
     }
 
-    // regex para senha forte
     const senhaRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&._\-])[A-Za-z\d@$!%*?&._\-]{8,}$/;
 
@@ -76,7 +74,6 @@ export default function Cadastro() {
       console.log('Cadastro realizado:', response.data);
       setSucesso('Cadastro realizado com sucesso!');
 
-      // Redireciona para login após 2 segundos
       setTimeout(() => navigation.navigate('Login'), 2000);
     } catch (err: any) {
       console.error('Erro no cadastro:', err);
@@ -97,8 +94,6 @@ export default function Cadastro() {
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Cadastro de Administrador</Text>
-
-        {/* Nome */}
         <Text style={styles.label}>Nome</Text>
         <TextInput
           style={styles.input}
@@ -107,8 +102,6 @@ export default function Cadastro() {
           value={nome}
           onChangeText={setNome}
         />
-
-        {/* Email */}
         <Text style={styles.label}>Email</Text>
         <TextInput
           style={styles.input}
@@ -119,8 +112,6 @@ export default function Cadastro() {
           value={email}
           onChangeText={setEmail}
         />
-
-        {/* Senha */}
         <Text style={styles.label}>Senha</Text>
         <TextInput
           style={styles.input}
@@ -130,8 +121,6 @@ export default function Cadastro() {
           value={senha}
           onChangeText={setSenha}
         />
-
-        {/* Confirmar Senha */}
         <Text style={styles.label}>Confirmar Senha</Text>
         <TextInput
           style={styles.input}
@@ -141,12 +130,8 @@ export default function Cadastro() {
           value={confirmarSenha}
           onChangeText={setConfirmarSenha}
         />
-
-        {/* Mensagens */}
         {erro ? <Text style={styles.error}>{erro}</Text> : null}
         {sucesso ? <Text style={styles.success}>{sucesso}</Text> : null}
-
-        {/* Botão Cadastrar */}
         <TouchableOpacity
           style={styles.button}
           onPress={handleSubmit}
@@ -158,8 +143,7 @@ export default function Cadastro() {
             <Text style={styles.buttonText}>Cadastrar</Text>
           )}
         </TouchableOpacity>
-
-        {/* Botão Voltar */}
+        =
         <TouchableOpacity
           style={styles.buttonOutline}
           onPress={() => navigation.navigate('Login')}

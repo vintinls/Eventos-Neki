@@ -17,7 +17,7 @@ import EventoEditModal, { Evento } from '../components/EventoEditModal';
 
 type NovoEvento = {
   nome: string;
-  data: string; // YYYY-MM-DD
+  data: string;
   localizacao: string;
   imagemUrl?: string;
   imagemFile?: { uri: string; name: string; type: string } | null;
@@ -57,7 +57,6 @@ export default function Home() {
     fetchEventos();
   };
 
-  // 🚀 Adicionar evento: URL OU Upload (upload via fetch para evitar "Network Error")
   const handleAddEvento = async (dados: NovoEvento) => {
     try {
       if (!token) return;
@@ -65,7 +64,6 @@ export default function Home() {
       const dataISO = `${dados.data}T00:00:00`;
 
       if (dados.modoImagem === 'url') {
-        // JSON puro com axios
         await api.post('/eventos/url', {
           nome: dados.nome,
           data: dataISO,
@@ -74,7 +72,6 @@ export default function Home() {
           administradorId: admin?.id,
         });
       } else {
-        // multipart com fetch
         const form = new FormData();
 
         form.append(
@@ -101,7 +98,6 @@ export default function Home() {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
-            // NÃO defina 'Content-Type' -> fetch cria o boundary
           },
           body: form,
         });
@@ -121,7 +117,6 @@ export default function Home() {
     }
   };
 
-  // Excluir
   const handleDelete = async (id: number) => {
     try {
       if (!token) return;
@@ -133,7 +128,6 @@ export default function Home() {
     }
   };
 
-  // Editar
   const handleEditSave = async (
     id: number,
     novaData: string,

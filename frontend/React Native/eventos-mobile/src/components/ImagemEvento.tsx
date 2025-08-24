@@ -25,7 +25,6 @@ export default function ImagemEvento({ imagemUrl, alt, style }: Props) {
 
       let url = imagemUrl;
 
-      // 👉 se vier relativo ou com localhost, corrige para usar API_BASE
       if (!url.startsWith('http') || url.includes('localhost')) {
         url = `${API_BASE}${imagemUrl.replace('http://localhost:8080', '')}`;
       }

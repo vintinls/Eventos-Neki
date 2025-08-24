@@ -27,7 +27,6 @@ export default function Login() {
   const [lembrar, setLembrar] = useState(false);
   const [showSenha, setShowSenha] = useState(false);
 
-  // 🔹 Carregar credenciais salvas
   useEffect(() => {
     const loadSaved = async () => {
       const savedEmail = await AsyncStorage.getItem('savedEmail');
@@ -47,7 +46,6 @@ export default function Login() {
     try {
       await login(data.email, data.senha);
 
-      // 🔹 Salvar ou limpar credenciais
       if (lembrar) {
         await AsyncStorage.setItem('savedEmail', data.email);
         await AsyncStorage.setItem('savedSenha', data.senha);
@@ -75,7 +73,6 @@ export default function Login() {
 
         {erro ? <Text style={styles.error}>{erro}</Text> : null}
 
-        {/* Campo Email */}
         <Text style={styles.label}>Email</Text>
         <Controller
           control={control}
@@ -94,7 +91,6 @@ export default function Login() {
           )}
         />
 
-        {/* Campo Senha */}
         <Text style={styles.label}>Senha</Text>
         <Controller
           control={control}
@@ -117,7 +113,6 @@ export default function Login() {
           </Text>
         </TouchableOpacity>
 
-        {/* 🔹 Checkbox Lembrar-me */}
         <TouchableOpacity
           onPress={() => setLembrar((prev) => !prev)}
           style={styles.checkboxContainer}
@@ -127,7 +122,6 @@ export default function Login() {
           </Text>
         </TouchableOpacity>
 
-        {/* Botão de Login */}
         <TouchableOpacity
           style={styles.button}
           onPress={handleSubmit(onSubmit)}
@@ -140,7 +134,6 @@ export default function Login() {
           )}
         </TouchableOpacity>
 
-        {/* Link para Cadastro */}
         <TouchableOpacity onPress={() => navigation.navigate('Cadastro')}>
           <Text style={styles.link}>Cadastre-se</Text>
         </TouchableOpacity>
