@@ -22,14 +22,46 @@ export default function Cadastro() {
   const [sucesso, setSucesso] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const validate = () => {
+    if (
+      !nome.trim() ||
+      !email.trim() ||
+      !senha.trim() ||
+      !confirmarSenha.trim()
+    ) {
+      setErro('Todos os campos são obrigatórios.');
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErro('Digite um email válido.');
+      return false;
+    }
+
+    const senhaRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&._\-])[A-Za-z\d@$!%*?&._\-]{8,}$/;
+
+    if (!senhaRegex.test(senha)) {
+      setErro(
+        'A senha deve ter no mínimo 8 caracteres, incluindo letra maiúscula, letra minúscula, número e caractere especial.'
+      );
+      return false;
+    }
+
+    if (senha !== confirmarSenha) {
+      setErro('As senhas não coincidem.');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async () => {
     setErro('');
     setSucesso('');
 
-    if (senha !== confirmarSenha) {
-      setErro('As senhas não coincidem!');
-      return;
-    }
+    if (!validate()) return;
 
     try {
       setLoading(true);
@@ -42,7 +74,6 @@ export default function Cadastro() {
       console.log('Cadastro realizado:', response.data);
       setSucesso('Cadastro realizado com sucesso!');
 
-      // Redireciona para login após 2 segundos
       setTimeout(() => navigation.navigate('Login'), 2000);
     } catch (err: any) {
       console.error('Erro no cadastro:', err);
@@ -63,8 +94,6 @@ export default function Cadastro() {
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Cadastro de Administrador</Text>
-
-        {/* Nome */}
         <Text style={styles.label}>Nome</Text>
         <TextInput
           style={styles.input}
@@ -73,8 +102,6 @@ export default function Cadastro() {
           value={nome}
           onChangeText={setNome}
         />
-
-        {/* Email */}
         <Text style={styles.label}>Email</Text>
         <TextInput
           style={styles.input}
@@ -85,8 +112,6 @@ export default function Cadastro() {
           value={email}
           onChangeText={setEmail}
         />
-
-        {/* Senha */}
         <Text style={styles.label}>Senha</Text>
         <TextInput
           style={styles.input}
@@ -96,8 +121,6 @@ export default function Cadastro() {
           value={senha}
           onChangeText={setSenha}
         />
-
-        {/* Confirmar Senha */}
         <Text style={styles.label}>Confirmar Senha</Text>
         <TextInput
           style={styles.input}
@@ -107,12 +130,8 @@ export default function Cadastro() {
           value={confirmarSenha}
           onChangeText={setConfirmarSenha}
         />
-
-        {/* Mensagens */}
         {erro ? <Text style={styles.error}>{erro}</Text> : null}
         {sucesso ? <Text style={styles.success}>{sucesso}</Text> : null}
-
-        {/* Botão Cadastrar */}
         <TouchableOpacity
           style={styles.button}
           onPress={handleSubmit}
@@ -124,8 +143,7 @@ export default function Cadastro() {
             <Text style={styles.buttonText}>Cadastrar</Text>
           )}
         </TouchableOpacity>
-
-        {/* Botão Voltar */}
+        =
         <TouchableOpacity
           style={styles.buttonOutline}
           onPress={() => navigation.navigate('Login')}

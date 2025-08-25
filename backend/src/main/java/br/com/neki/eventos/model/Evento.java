@@ -22,10 +22,9 @@ public class Evento {
     @Column(nullable = false)
     private String localizacao;
 
-    // Armazena binário corretamente como bytea no Postgres
     @Lob
-    @JdbcTypeCode(SqlTypes.BINARY) // <— força binder de bytes
-    @Column(name = "imagem", nullable = true)
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "imagem")
     private byte[] imagem;
 
     @Column(name = "imagem_url")
@@ -35,25 +34,59 @@ public class Evento {
     @JoinColumn(name = "administrador_id", nullable = false)
     private Administrador administrador;
 
-    // Getters e Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public LocalDateTime getData() { return data; }
-    public void setData(LocalDateTime data) { this.data = data; }
+    public String getNome() {
+        return nome;
+    }
 
-    public String getLocalizacao() { return localizacao; }
-    public void setLocalizacao(String localizacao) { this.localizacao = localizacao; }
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
 
-    public byte[] getImagem() { return imagem; }
-    public void setImagem(byte[] imagem) { this.imagem = imagem; }
+    public LocalDateTime getData() {
+        return data;
+    }
 
-    public String getImagemUrl() { return imagemUrl; }
-    public void setImagemUrl(String imagemUrl) { this.imagemUrl = imagemUrl; }
+    public void setData(LocalDateTime data) {
+        this.data = data;
+    }
 
-    public Administrador getAdministrador() { return administrador; }
-    public void setAdministrador(Administrador administrador) { this.administrador = administrador; }
+    public String getLocalizacao() {
+        return localizacao;
+    }
+
+    public void setLocalizacao(String localizacao) {
+        this.localizacao = localizacao;
+    }
+
+    public byte[] getImagem() {
+        return imagem;
+    }
+
+    public void setImagem(byte[] imagem) {
+        this.imagem = imagem;
+    }
+
+    public String getImagemUrl() {
+        return imagemUrl;
+    }
+
+    public void setImagemUrl(String imagemUrl) {
+        this.imagemUrl = imagemUrl;
+    }
+
+    public Administrador getAdministrador() {
+        return administrador;
+    }
+
+    public void setAdministrador(Administrador administrador) {
+        this.administrador = administrador;
+    }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,84 +7,120 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 import EventoCard from '../components/EventoCard';
 import EventoModal from '../components/EventoModal';
-import EventoEditModal from '../components/EventoEditModal';
+import EventoEditModal, { Evento } from '../components/EventoEditModal';
 
-interface Evento {
-  id: number;
+type NovoEvento = {
   nome: string;
   data: string;
   localizacao: string;
   imagemUrl?: string;
-}
+  imagemFile?: { uri: string; name: string; type: string } | null;
+  modoImagem: 'url' | 'upload';
+};
 
 export default function Home() {
   const { admin, token, logout } = useContext(AuthContext);
+
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null);
 
-  // Buscar eventos do admin
-  const fetchEventos = async () => {
+  const fetchEventos = useCallback(async () => {
     try {
       if (!admin || !token) return;
-      const response = await api.get(`/eventos/admin/${admin.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setEventos(response.data);
+      const response = await api.get(`/eventos/admin/${admin.id}`);
+      setEventos(response.data || []);
     } catch (err) {
       console.error('Erro ao buscar eventos:', err);
+      Alert.alert('Erro', 'Não foi possível carregar os eventos.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [admin, token]);
 
   useEffect(() => {
     fetchEventos();
-  }, []);
+  }, [fetchEventos]);
 
-  // Adicionar evento (apenas com URL)
-  const handleAddEvento = async (dados: {
-    nome: string;
-    data: string;
-    localizacao: string;
-    imagemUrl: string;
-  }) => {
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchEventos();
+  };
+
+  const handleAddEvento = async (dados: NovoEvento) => {
     try {
       if (!token) return;
 
-      await api.post(
-        '/eventos/url',
-        {
+      const dataISO = `${dados.data}T00:00:00`;
+
+      if (dados.modoImagem === 'url') {
+        await api.post('/eventos/url', {
           nome: dados.nome,
-          data: dados.data,
+          data: dataISO,
           localizacao: dados.localizacao,
           imagemUrl: dados.imagemUrl,
           administradorId: admin?.id,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+        });
+      } else {
+        const form = new FormData();
+
+        form.append(
+          'dados',
+          JSON.stringify({
+            nome: dados.nome,
+            data: dataISO,
+            localizacao: dados.localizacao,
+            administradorId: admin?.id,
+          })
+        );
+
+        if (dados.imagemFile) {
+          form.append('imagem', {
+            uri: dados.imagemFile.uri,
+            name: dados.imagemFile.name ?? 'imagem.jpg',
+            type: dados.imagemFile.type ?? 'image/jpeg',
+          } as any);
+        }
+
+        const base = (api as any)?.defaults?.baseURL ?? 'http://10.0.2.2:8080';
+
+        const res = await fetch(`${base}/eventos/upload`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: form,
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          console.log('UPLOAD FAIL', res.status, text);
+          throw new Error(`upload falhou: ${res.status}`);
+        }
+      }
 
       setShowAddModal(false);
       fetchEventos();
     } catch (err: any) {
-      console.error('❌ Erro ao adicionar evento:', err);
+      console.error('❌ Erro ao adicionar evento:', err?.response || err);
       Alert.alert('Erro', 'Não foi possível salvar o evento.');
     }
   };
 
-  // Excluir evento
   const handleDelete = async (id: number) => {
     try {
       if (!token) return;
-      await api.delete(`/eventos/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/eventos/${id}`);
       fetchEventos();
     } catch (err) {
       console.error('Erro ao excluir evento:', err);
@@ -92,7 +128,6 @@ export default function Home() {
     }
   };
 
-  // Salvar edição de evento
   const handleEditSave = async (
     id: number,
     novaData: string,
@@ -100,14 +135,10 @@ export default function Home() {
   ) => {
     try {
       if (!token) return;
-      await api.put(
-        `/eventos/${id}`,
-        {
-          data: novaData,
-          localizacao: novaLocal,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/eventos/${id}`, {
+        data: `${novaData}T00:00:00`,
+        localizacao: novaLocal,
+      });
       setEventoEditando(null);
       fetchEventos();
     } catch (err) {
@@ -141,10 +172,18 @@ export default function Home() {
               onDelete={() => handleDelete(item.id)}
             />
           )}
+          refreshControl={
+            <RefreshControl
+              tintColor='#00ADB5'
+              colors={['#00ADB5']}
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+            />
+          }
+          contentContainerStyle={{ paddingBottom: 120 }}
         />
       )}
 
-      {/* Botão Adicionar Evento */}
       <TouchableOpacity
         style={styles.buttonAdd}
         onPress={() => setShowAddModal(true)}
@@ -152,19 +191,16 @@ export default function Home() {
         <Text style={styles.buttonAddText}>+ Adicionar Evento</Text>
       </TouchableOpacity>
 
-      {/* Botão Logout */}
       <TouchableOpacity style={styles.buttonLogout} onPress={logout}>
         <Text style={styles.buttonLogoutText}>Sair</Text>
       </TouchableOpacity>
 
-      {/* Modal de adicionar evento */}
       <EventoModal
         visible={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSave={handleAddEvento}
       />
 
-      {/* Modal de edição de evento */}
       <EventoEditModal
         visible={eventoEditando !== null}
         evento={eventoEditando}
@@ -180,6 +216,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0A192F',
     padding: 16,
+    paddingTop: 60,
   },
   title: {
     fontSize: 22,
@@ -188,11 +225,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  empty: {
-    color: '#ccc',
-    textAlign: 'center',
-    marginTop: 40,
-  },
+  empty: { color: '#ccc', textAlign: 'center', marginTop: 40 },
   buttonAdd: {
     backgroundColor: '#00ADB5',
     padding: 14,
@@ -200,10 +233,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
-  buttonAddText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
+  buttonAddText: { color: '#fff', fontWeight: 'bold' },
   buttonLogout: {
     marginTop: 12,
     padding: 12,
@@ -212,8 +242,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
   },
-  buttonLogoutText: {
-    color: '#00ADB5',
-    fontWeight: 'bold',
-  },
+  buttonLogoutText: { color: '#00ADB5', fontWeight: 'bold' },
 });

@@ -5,7 +5,6 @@ import br.com.neki.eventos.model.Administrador;
 import br.com.neki.eventos.security.JwtService;
 import br.com.neki.eventos.service.AdministradorService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
@@ -15,16 +14,17 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Autenticação", description = "Cadastro e login de administrador")
 public class AuthController {
 
-    @Autowired
-    private AdministradorService administradorService;
+    private final AdministradorService administradorService;
+    private final JwtService jwtService;
 
-    @Autowired
-    private JwtService jwtService;
+    public AuthController(AdministradorService administradorService, JwtService jwtService) {
+        this.administradorService = administradorService;
+        this.jwtService = jwtService;
+    }
 
     @PostMapping("/register")
     public ResponseEntity<AdministradorDTO> register(@RequestBody AdministradorRequestDTO dto) {
-        AdministradorDTO criado = administradorService.cadastrar(dto);
-        return ResponseEntity.ok(criado);
+        return ResponseEntity.ok(administradorService.cadastrar(dto));
     }
 
     @PostMapping("/login")
@@ -37,8 +37,8 @@ public class AuthController {
         }
 
         String token = jwtService.generateToken(admin.getEmail());
-        AdministradorDTO adminDTO = new AdministradorDTO(admin.getId(), admin.getNome(), admin.getEmail());
-
-        return ResponseEntity.ok(new LoginResponseDTO(token, adminDTO));
+        return ResponseEntity.ok(
+                new LoginResponseDTO(token, new AdministradorDTO(admin.getId(), admin.getNome(), admin.getEmail()))
+        );
     }
 }

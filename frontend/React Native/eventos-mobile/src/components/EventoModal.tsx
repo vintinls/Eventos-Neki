@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   Modal,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+
+import FormInput from '../components/modal/FormInput';
+import DatePickerField from '../components/modal/DatePickerField';
+import ImageSelector from '../components/modal/ImageSelector';
+import ModalButtons from '../components/modal/ModalButtons';
+
+type Modo = 'url' | 'upload';
 
 interface Props {
   visible: boolean;
@@ -18,95 +24,142 @@ interface Props {
     nome: string;
     data: string;
     localizacao: string;
-    imagemUrl: string;
+    imagemUrl?: string;
+    imagemFile?: { uri: string; name: string; type: string } | null;
+    modoImagem: Modo;
   }) => void;
 }
 
+function toYYYYMMDD(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+const MAX_BYTES = 5 * 1024 * 1024; // 5MB
+const ALLOWED = ['image/jpeg', 'image/png', 'image/webp'];
+
 export default function EventoModal({ visible, onClose, onSave }: Props) {
   const [nome, setNome] = useState('');
-  const [data, setData] = useState('');
+  const [dateObj, setDateObj] = useState<Date>(new Date());
+  const [dataTexto, setDataTexto] = useState('');
   const [localizacao, setLocalizacao] = useState('');
   const [imagemUrl, setImagemUrl] = useState('');
 
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [admin, setAdmin] = useState<any>({});
-  const [token, setToken] = useState<string | null>(null);
+  const [modoImagem, setModoImagem] = useState<Modo>('url');
+  const [imagemFile, setImagemFile] = useState<{
+    uri: string;
+    name: string;
+    type: string;
+  } | null>(null);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
-      const adminStr = await AsyncStorage.getItem('admin');
-      const tokenStr = await AsyncStorage.getItem('token');
-      if (adminStr) setAdmin(JSON.parse(adminStr));
-      if (tokenStr) setToken(tokenStr);
-    };
-    loadData();
-  }, []);
+    setDataTexto(toYYYYMMDD(dateObj));
+  }, [dateObj]);
 
-  // Máscara de data (dd/MM/yyyy)
-  const handleChangeData = (text: string) => {
-    const cleaned = text.replace(/\D/g, '');
-    let formatted = cleaned;
-
-    if (cleaned.length > 2 && cleaned.length <= 4) {
-      formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
-    } else if (cleaned.length > 4) {
-      formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(
-        2,
-        4
-      )}/${cleaned.slice(4, 8)}`;
+  // reset quando fecha modal
+  useEffect(() => {
+    if (!visible) {
+      const now = new Date();
+      setNome('');
+      setLocalizacao('');
+      setImagemUrl('');
+      setImagemFile(null);
+      setModoImagem('url');
+      setErrors({});
+      setDateObj(now);
+      setDataTexto(toYYYYMMDD(now));
+      setSaving(false);
     }
-
-    setData(formatted);
-  };
+  }, [visible]);
 
   const validate = () => {
-    const newErrors: { [key: string]: string } = {};
-    if (!nome.trim()) newErrors.nome = 'O nome do evento é obrigatório.';
-    if (!data.trim()) newErrors.data = 'A data do evento é obrigatória.';
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(data))
-      newErrors.data = 'A data deve estar no formato DD/MM/AAAA.';
-    if (!localizacao.trim())
-      newErrors.localizacao = 'A localização é obrigatória.';
-    if (!imagemUrl.trim())
-      newErrors.imagemUrl = 'A URL da imagem é obrigatória.';
+    const e: Record<string, string> = {};
+    if (!nome.trim()) e.nome = 'O nome do evento é obrigatório.';
+    if (!dataTexto.trim()) e.data = 'A data do evento é obrigatória.';
+    if (!localizacao.trim()) e.localizacao = 'A localização é obrigatória.';
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Converte "dd/MM/yyyy" → "yyyy-MM-ddTHH:mm:ss"
-  const formatDateToISO = (dateStr: string): string => {
-    const [dia, mes, ano] = dateStr.split('/');
-    return `${ano}-${mes}-${dia}T00:00:00`;
-  };
-
-  const handleSave = async () => {
-    if (!validate()) return;
-
-    try {
-      const dataISO = formatDateToISO(data);
-
-      onSave({
-        nome,
-        data: dataISO,
-        localizacao,
-        imagemUrl,
-      });
-
-      resetForm();
-    } catch (err: any) {
-      console.error('Erro ao salvar evento no modal:', err);
-      Alert.alert('Erro', 'Falha ao salvar evento.');
+    if (modoImagem === 'url') {
+      if (!imagemUrl.trim()) e.imagemUrl = 'A URL da imagem é obrigatória.';
+    } else {
+      if (!imagemFile) e.imagemFile = 'Você deve selecionar um arquivo.';
     }
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const resetForm = () => {
-    setNome('');
-    setData('');
-    setLocalizacao('');
-    setImagemUrl('');
-    setErrors({});
-    onClose();
+  const escolherImagem = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(
+        'Permissão',
+        'Precisamos da sua permissão para acessar as imagens.'
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: false,
+      quality: 0.9,
+    });
+
+    if (result.canceled || !result.assets?.length) return;
+
+    const asset = result.assets[0];
+    const nameGuess =
+      asset.fileName ??
+      (asset.uri.includes('/')
+        ? asset.uri.split('/').pop() ?? `imagem_${Date.now()}.jpg`
+        : `imagem_${Date.now()}.jpg`);
+
+    let typeGuess = asset.mimeType;
+    if (!typeGuess) {
+      const lower = nameGuess.toLowerCase();
+      if (lower.endsWith('.png')) typeGuess = 'image/png';
+      else if (lower.endsWith('.webp')) typeGuess = 'image/webp';
+      else typeGuess = 'image/jpeg';
+    }
+
+    const size = (asset as any).fileSize as number | undefined;
+    if (size && size > MAX_BYTES) {
+      Alert.alert('Arquivo grande', 'Selecione uma imagem de até 5 MB.');
+      return;
+    }
+    if (!ALLOWED.includes(typeGuess)) {
+      Alert.alert('Tipo inválido', 'Use JPG, PNG ou WEBP.');
+      return;
+    }
+
+    setImagemFile({ uri: asset.uri, name: nameGuess, type: typeGuess });
+    setErrors((prev) => {
+      const { imagemFile, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const canSave = useMemo(() => {
+    if (!nome.trim() || !dataTexto.trim() || !localizacao.trim()) return false;
+    if (modoImagem === 'url') return !!imagemUrl.trim();
+    return !!imagemFile;
+  }, [nome, dataTexto, localizacao, imagemUrl, imagemFile, modoImagem]);
+
+  const handleSave = () => {
+    if (!validate()) return;
+    setSaving(true);
+    onSave({
+      nome,
+      data: dataTexto,
+      localizacao,
+      imagemUrl: modoImagem === 'url' ? imagemUrl : undefined,
+      imagemFile: modoImagem === 'upload' ? imagemFile : null,
+      modoImagem,
+    });
+    setSaving(false);
   };
 
   return (
@@ -116,61 +169,43 @@ export default function EventoModal({ visible, onClose, onSave }: Props) {
           <ScrollView>
             <Text style={styles.title}>Novo Evento</Text>
 
-            {/* Nome */}
-            <TextInput
-              style={styles.input}
+            <FormInput
               placeholder='Nome do evento'
-              placeholderTextColor='#aaa'
               value={nome}
               onChangeText={setNome}
+              error={errors.nome}
             />
-            {errors.nome && <Text style={styles.error}>{errors.nome}</Text>}
 
-            {/* Data */}
-            <TextInput
-              style={styles.input}
-              placeholder='Data (DD/MM/AAAA)'
-              placeholderTextColor='#aaa'
-              value={data}
-              onChangeText={handleChangeData}
-              keyboardType='numeric'
-              maxLength={10}
+            <DatePickerField
+              date={dateObj}
+              onChange={setDateObj}
+              error={errors.data}
             />
-            {errors.data && <Text style={styles.error}>{errors.data}</Text>}
 
-            {/* Localização */}
-            <TextInput
-              style={styles.input}
+            <FormInput
               placeholder='Localização'
-              placeholderTextColor='#aaa'
               value={localizacao}
               onChangeText={setLocalizacao}
+              error={errors.localizacao}
             />
-            {errors.localizacao && (
-              <Text style={styles.error}>{errors.localizacao}</Text>
-            )}
 
-            {/* URL da imagem */}
-            <TextInput
-              style={styles.input}
-              placeholder='URL da imagem'
-              placeholderTextColor='#aaa'
-              value={imagemUrl}
-              onChangeText={setImagemUrl}
+            <ImageSelector
+              modoImagem={modoImagem}
+              setModoImagem={setModoImagem}
+              imagemUrl={imagemUrl}
+              setImagemUrl={setImagemUrl}
+              imagemFile={imagemFile}
+              escolherImagem={escolherImagem}
+              errorUrl={errors.imagemUrl}
+              errorFile={errors.imagemFile}
             />
-            {errors.imagemUrl && (
-              <Text style={styles.error}>{errors.imagemUrl}</Text>
-            )}
 
-            {/* Botões */}
-            <View style={styles.buttons}>
-              <TouchableOpacity style={styles.cancelButton} onPress={resetForm}>
-                <Text style={styles.cancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                <Text style={styles.saveText}>Salvar</Text>
-              </TouchableOpacity>
-            </View>
+            <ModalButtons
+              onCancel={onClose}
+              onSave={handleSave}
+              canSave={canSave}
+              saving={saving}
+            />
           </ScrollView>
         </View>
       </View>
@@ -198,48 +233,5 @@ const styles = StyleSheet.create({
     color: '#00ADB5',
     textAlign: 'center',
     marginBottom: 16,
-  },
-  input: {
-    backgroundColor: '#0F2742',
-    color: '#fff',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#333',
-    marginBottom: 8,
-  },
-  error: {
-    color: '#ff6b6b',
-    marginBottom: 6,
-  },
-  buttons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  cancelButton: {
-    borderColor: '#aaa',
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 8,
-    flex: 1,
-    marginRight: 6,
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: '#aaa',
-    fontWeight: 'bold',
-  },
-  saveButton: {
-    backgroundColor: '#00ADB5',
-    padding: 10,
-    borderRadius: 8,
-    flex: 1,
-    marginLeft: 6,
-    alignItems: 'center',
-  },
-  saveText: {
-    color: '#fff',
-    fontWeight: 'bold',
   },
 });

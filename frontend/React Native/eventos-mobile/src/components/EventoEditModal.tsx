@@ -1,19 +1,24 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   Modal,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 
-interface Evento {
+import DatePickerField from '../components/modal/DatePickerField';
+import FormInput from '../components/modal/FormInput';
+import ModalButtons from '../components/modal/ModalButtons';
+
+export interface Evento {
   id: number;
   nome: string;
   data: string;
   localizacao: string;
+  imagemUrl?: string;
 }
 
 interface Props {
@@ -23,24 +28,50 @@ interface Props {
   onSave: (id: number, novaData: string, novaLocal: string) => void;
 }
 
+function toYYYYMMDD(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseToDate(value: string | undefined): Date {
+  if (!value) return new Date();
+  if (value.includes('T')) {
+    const dt = new Date(value);
+    return isNaN(dt.getTime()) ? new Date() : dt;
+  }
+  const dt = new Date(`${value}T00:00:00`);
+  return isNaN(dt.getTime()) ? new Date() : dt;
+}
+
 export default function EventoEditModal({
   visible,
   evento,
   onClose,
   onSave,
 }: Props) {
-  if (!evento) return null;
-
-  const [data, setData] = useState(evento.data.split('T')[0]); // formato YYYY-MM-DD
-  const [localizacao, setLocalizacao] = useState(evento.localizacao);
-
+  const [dateObj, setDateObj] = useState<Date>(new Date());
+  const [dataTexto, setDataTexto] = useState<string>('');
+  const [localizacao, setLocalizacao] = useState<string>('');
   const [errors, setErrors] = useState<{ data?: string; localizacao?: string }>(
     {}
   );
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (evento) {
+      const base = parseToDate(evento.data);
+      setDateObj(base);
+      setDataTexto(toYYYYMMDD(base));
+      setLocalizacao(evento.localizacao || '');
+      setErrors({});
+    }
+  }, [evento, visible]);
 
   const validate = () => {
     const newErrors: { data?: string; localizacao?: string } = {};
-    if (!data.trim()) newErrors.data = 'A data é obrigatória.';
+    if (!dataTexto.trim()) newErrors.data = 'A data é obrigatória.';
     if (!localizacao.trim())
       newErrors.localizacao = 'A localização é obrigatória.';
     setErrors(newErrors);
@@ -48,63 +79,70 @@ export default function EventoEditModal({
   };
 
   const handleSave = () => {
-    if (!validate()) return;
+    if (!validate() || !evento) return;
     try {
-      onSave(evento.id, data, localizacao);
+      setSaving(true);
+
+      const dataFinal = toYYYYMMDD(dateObj);
+
+      onSave(evento.id, dataFinal, localizacao);
+
+      setSaving(false);
     } catch (err) {
       console.error('Erro ao editar evento:', err);
       Alert.alert('Erro', 'Não foi possível editar o evento.');
+      setSaving(false);
     }
   };
 
+  if (!evento) return null;
+
   return (
-    <Modal visible={visible} transparent animationType='fade'>
+    <Modal
+      visible={visible}
+      transparent
+      animationType='fade'
+      onRequestClose={onClose}
+    >
       <View style={styles.overlay}>
-        <View style={styles.modal}>
-          <Text style={styles.title}>Editar Evento</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.select({ ios: 'padding', android: undefined })}
+          style={{ width: '90%' }}
+        >
+          <View style={styles.modal}>
+            <Text style={styles.title}>Editar Evento</Text>
 
-          {/* Nome (só exibe, não editável) */}
-          <TextInput
-            style={[
-              styles.input,
-              { backgroundColor: '#1E2A3C', color: '#aaa' },
-            ]}
-            value={evento.nome}
-            editable={false}
-          />
+            <FormInput
+              placeholder='Nome do evento'
+              value={evento.nome}
+              onChangeText={() => {}}
+              editable={false}
+            />
 
-          {/* Data */}
-          <TextInput
-            style={styles.input}
-            placeholder='Data (YYYY-MM-DD)'
-            placeholderTextColor='#aaa'
-            value={data}
-            onChangeText={setData}
-          />
-          {errors.data && <Text style={styles.error}>{errors.data}</Text>}
+            <DatePickerField
+              date={dateObj}
+              onChange={(d, str) => {
+                setDateObj(d);
+                setDataTexto(str);
+              }}
+              error={errors.data}
+            />
 
-          {/* Localização */}
-          <TextInput
-            style={styles.input}
-            placeholder='Localização'
-            placeholderTextColor='#aaa'
-            value={localizacao}
-            onChangeText={setLocalizacao}
-          />
-          {errors.localizacao && (
-            <Text style={styles.error}>{errors.localizacao}</Text>
-          )}
+            <FormInput
+              placeholder='Localização'
+              value={localizacao}
+              onChangeText={setLocalizacao}
+              error={errors.localizacao}
+            />
 
-          {/* Botões */}
-          <View style={styles.buttons}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelText}>Cancelar</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveText}>Salvar</Text>
-            </TouchableOpacity>
+            <ModalButtons
+              onCancel={onClose}
+              onSave={handleSave}
+              canSave={!!dataTexto.trim() && !!localizacao.trim()}
+              saving={saving}
+            />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -118,10 +156,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modal: {
-    width: '90%',
+    width: '100%',
     backgroundColor: '#0B1E34',
     borderRadius: 12,
     padding: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   title: {
     fontSize: 20,
@@ -129,48 +171,5 @@ const styles = StyleSheet.create({
     color: '#00ADB5',
     textAlign: 'center',
     marginBottom: 16,
-  },
-  input: {
-    backgroundColor: '#0F2742',
-    color: '#fff',
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#333',
-    marginBottom: 8,
-  },
-  error: {
-    color: '#ff6b6b',
-    marginBottom: 6,
-  },
-  buttons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  cancelButton: {
-    borderColor: '#aaa',
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 8,
-    flex: 1,
-    marginRight: 6,
-    alignItems: 'center',
-  },
-  cancelText: {
-    color: '#aaa',
-    fontWeight: 'bold',
-  },
-  saveButton: {
-    backgroundColor: '#00ADB5',
-    padding: 10,
-    borderRadius: 8,
-    flex: 1,
-    marginLeft: 6,
-    alignItems: 'center',
-  },
-  saveText: {
-    color: '#fff',
-    fontWeight: 'bold',
   },
 });

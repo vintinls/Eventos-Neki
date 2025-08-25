@@ -4,9 +4,9 @@ import br.com.neki.eventos.dto.EventoDTO;
 import br.com.neki.eventos.dto.EventoRequestDTO;
 import br.com.neki.eventos.dto.EventoUpdateRequestDTO;
 import br.com.neki.eventos.service.EventoService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,37 +21,38 @@ import java.util.List;
 @Tag(name = "Eventos", description = "CRUD de eventos do administrador")
 public class EventoController {
 
-    @Autowired
-    private EventoService eventoService;
+    private final EventoService eventoService;
+    private final ObjectMapper objectMapper;
 
-    // 🔹 Criar evento com upload de arquivo (JSON + imagem binária no banco)
+    public EventoController(EventoService eventoService, ObjectMapper objectMapper) {
+        this.eventoService = eventoService;
+        this.objectMapper = objectMapper;
+    }
+
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EventoDTO> criarComUpload(
-            @RequestPart("dados") @Valid EventoRequestDTO request,
-            @RequestPart(value = "imagem", required = false) MultipartFile imagem) throws IOException {
-
+            @RequestPart("dados") String dadosJson,
+            @RequestPart(value = "imagem", required = false) MultipartFile imagem
+    ) throws IOException {
+        EventoRequestDTO request = objectMapper.readValue(dadosJson, EventoRequestDTO.class);
         return ResponseEntity.ok(eventoService.criarComUpload(request, imagem));
     }
 
-    // 🔹 Criar evento passando apenas a URL da imagem (JSON puro)
     @PostMapping("/url")
     public ResponseEntity<EventoDTO> criarComUrl(@Valid @RequestBody EventoRequestDTO request) {
         return ResponseEntity.ok(eventoService.criarComUrl(request));
     }
 
-    // 🔹 Lista eventos de um administrador específico
     @GetMapping("/admin/{administradorId}")
     public ResponseEntity<List<EventoDTO>> listarPorAdmin(@PathVariable Long administradorId) {
         return ResponseEntity.ok(eventoService.listarPorAdministrador(administradorId));
     }
 
-    // 🔹 Lista todos os eventos
     @GetMapping
     public ResponseEntity<List<EventoDTO>> listarTodos() {
         return ResponseEntity.ok(eventoService.listarTodos());
     }
 
-    // 🔹 Atualiza informações do evento
     @PutMapping("/{eventoId}")
     public ResponseEntity<EventoDTO> atualizar(
             @PathVariable Long eventoId,
@@ -59,7 +60,6 @@ public class EventoController {
         return ResponseEntity.ok(eventoService.atualizar(eventoId, dto));
     }
 
-    // 🔹 Deleta um evento
     @DeleteMapping("/{eventoId}")
     public ResponseEntity<Void> excluir(@PathVariable Long eventoId) {
         eventoService.excluir(eventoId);
@@ -74,14 +74,12 @@ public class EventoController {
             return ResponseEntity.notFound().build();
         }
 
-        // Detecta tipo correto da imagem
         String contentType;
         try (var is = new java.io.ByteArrayInputStream(imagem)) {
             contentType = java.net.URLConnection.guessContentTypeFromStream(is);
         }
-
         if (contentType == null) {
-            contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE; // fallback genérico
+            contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
         }
 
         return ResponseEntity.ok()
@@ -89,6 +87,4 @@ public class EventoController {
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(imagem);
     }
-
-
 }

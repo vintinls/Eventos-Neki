@@ -1,16 +1,17 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Base URL do backend - precisa ter http:// e a porta
+export const API_BASE = 'http://10.0.2.2:8080'; 
+
 const api = axios.create({
-  baseURL: 'http://10.0.2.2:8080',
+  baseURL: API_BASE,
 });
 
-// Interceptador para adicionar o token em cada requisição
 api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem('token');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers = config.headers ?? {};
+    (config.headers as any).Authorization = `Bearer ${token}`;
   }
   return config;
 });

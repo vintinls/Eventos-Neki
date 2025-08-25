@@ -12,6 +12,9 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const senhaForteRegex =
+    /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]).{8,}$/;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
@@ -19,6 +22,13 @@ export default function Register() {
 
     if (senha !== confirmarSenha) {
       setErro('As senhas não coincidem.');
+      return;
+    }
+
+    if (!senhaForteRegex.test(senha)) {
+      setErro(
+        'A senha deve ter no mínimo 8 caracteres, incluindo letra maiúscula, número e caractere especial.'
+      );
       return;
     }
 

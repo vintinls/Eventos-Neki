@@ -6,9 +6,26 @@ public class EventoUpdateRequestDTO {
     private LocalDateTime data;
     private String localizacao;
 
-    public LocalDateTime getData() { return data; }
-    public void setData(LocalDateTime data) { this.data = data; }
+    public EventoUpdateRequestDTO() {}
 
-    public String getLocalizacao() { return localizacao; }
-    public void setLocalizacao(String localizacao) { this.localizacao = localizacao; }
+    public EventoUpdateRequestDTO(LocalDateTime data, String localizacao) {
+        this.data = data;
+        this.localizacao = localizacao;
+    }
+
+    public LocalDateTime getData() {
+        return data;
+    }
+
+    public void setData(LocalDateTime data) {
+        this.data = data;
+    }
+
+    public String getLocalizacao() {
+        return localizacao;
+    }
+
+    public void setLocalizacao(String localizacao) {
+        this.localizacao = localizacao;
+    }
 }

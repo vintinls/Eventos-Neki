@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import ImagemEvento from './ImagemEvento';
 
 interface Evento {
   id: number;
@@ -18,28 +19,19 @@ interface Props {
 export default function EventoCard({ evento, onEdit, onDelete }: Props) {
   return (
     <View style={styles.card}>
-      {/* Imagem do evento */}
-      {evento.imagemUrl ? (
-        <Image
-          source={{ uri: evento.imagemUrl }}
-          style={styles.image}
-          resizeMode='cover'
-        />
-      ) : (
-        <View style={styles.imagePlaceholder}>
-          <Text style={{ color: '#999' }}>Sem imagem</Text>
-        </View>
-      )}
+      <ImagemEvento
+        imagemUrl={evento.imagemUrl}
+        alt={evento.nome}
+        style={styles.image}
+      />
 
-      {/* Informações */}
       <View style={styles.info}>
         <Text style={styles.eventName}>{evento.nome}</Text>
         <Text style={styles.eventInfo}>
-          📅 {new Date(evento.data).toLocaleDateString()}
+          {new Date(evento.data).toLocaleDateString()}
         </Text>
-        <Text style={styles.eventInfo}>📍 {evento.localizacao}</Text>
+        <Text style={styles.eventInfo}>{evento.localizacao}</Text>
 
-        {/* Botões */}
         <View style={styles.actions}>
           <TouchableOpacity style={styles.editButton} onPress={onEdit}>
             <Text style={styles.actionText}>Editar</Text>
@@ -63,14 +55,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 150,
-  },
-  imagePlaceholder: {
-    width: '100%',
-    height: 150,
-    backgroundColor: '#1E2A3C',
-    justifyContent: 'center',
-    alignItems: 'center',
+    height: 250,
   },
   info: {
     padding: 12,
@@ -91,16 +76,19 @@ const styles = StyleSheet.create({
   },
   editButton: {
     backgroundColor: '#112D4E',
-    padding: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 6,
   },
   deleteButton: {
     backgroundColor: '#B00020',
-    padding: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 6,
   },
   actionText: {
     color: '#fff',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
