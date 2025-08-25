@@ -8,7 +8,9 @@ public class EventoDTO {
     private String nome;
     private LocalDateTime data;
     private String localizacao;
-    private String imagemUrl;  // url ou vazio
+    private String imagemUrl;
+
+    public EventoDTO() {}
 
     public EventoDTO(Long id, String nome, LocalDateTime data, String localizacao, String imagemUrl) {
         this.id = id;
@@ -18,19 +20,43 @@ public class EventoDTO {
         this.imagemUrl = imagemUrl;
     }
 
-    // Getters e Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public LocalDateTime getData() { return data; }
-    public void setData(LocalDateTime data) { this.data = data; }
+    public String getNome() {
+        return nome;
+    }
 
-    public String getLocalizacao() { return localizacao; }
-    public void setLocalizacao(String localizacao) { this.localizacao = localizacao; }
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
 
-    public String getImagemUrl() { return imagemUrl; }
-    public void setImagemUrl(String imagemUrl) { this.imagemUrl = imagemUrl; }
+    public LocalDateTime getData() {
+        return data;
+    }
+
+    public void setData(LocalDateTime data) {
+        this.data = data;
+    }
+
+    public String getLocalizacao() {
+        return localizacao;
+    }
+
+    public void setLocalizacao(String localizacao) {
+        this.localizacao = localizacao;
+    }
+
+    public String getImagemUrl() {
+        return imagemUrl;
+    }
+
+    public void setImagemUrl(String imagemUrl) {
+        this.imagemUrl = imagemUrl;
+    }
 }

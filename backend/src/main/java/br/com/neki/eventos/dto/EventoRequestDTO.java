@@ -15,21 +15,55 @@ public class EventoRequestDTO {
 
     private Long administradorId;
 
-    private String imagemUrl; // usado quando o evento for criado via URL
+    private String imagemUrl;
 
-    // Getters e Setters
-    public String getNome() { return nome; }
-    public void setNome(String nome) { this.nome = nome; }
+    public EventoRequestDTO() {}
 
-    public LocalDateTime getData() { return data; }
-    public void setData(LocalDateTime data) { this.data = data; }
+    public EventoRequestDTO(String nome, LocalDateTime data, String localizacao, Long administradorId, String imagemUrl) {
+        this.nome = nome;
+        this.data = data;
+        this.localizacao = localizacao;
+        this.administradorId = administradorId;
+        this.imagemUrl = imagemUrl;
+    }
 
-    public String getLocalizacao() { return localizacao; }
-    public void setLocalizacao(String localizacao) { this.localizacao = localizacao; }
+    public String getNome() {
+        return nome;
+    }
 
-    public Long getAdministradorId() { return administradorId; }
-    public void setAdministradorId(Long administradorId) { this.administradorId = administradorId; }
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
 
-    public String getImagemUrl() { return imagemUrl; }
-    public void setImagemUrl(String imagemUrl) { this.imagemUrl = imagemUrl; }
+    public LocalDateTime getData() {
+        return data;
+    }
+
+    public void setData(LocalDateTime data) {
+        this.data = data;
+    }
+
+    public String getLocalizacao() {
+        return localizacao;
+    }
+
+    public void setLocalizacao(String localizacao) {
+        this.localizacao = localizacao;
+    }
+
+    public Long getAdministradorId() {
+        return administradorId;
+    }
+
+    public void setAdministradorId(Long administradorId) {
+        this.administradorId = administradorId;
+    }
+
+    public String getImagemUrl() {
+        return imagemUrl;
+    }
+
+    public void setImagemUrl(String imagemUrl) {
+        this.imagemUrl = imagemUrl;
+    }
 }

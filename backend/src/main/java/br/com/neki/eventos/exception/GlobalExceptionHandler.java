@@ -20,6 +20,6 @@ public class GlobalExceptionHandler {
         body.put("error", "E-mail duplicado");
         body.put("message", ex.getMessage());
 
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 }
