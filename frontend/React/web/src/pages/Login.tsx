@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 
@@ -11,6 +11,16 @@ export default function Login() {
   const [showSenha, setShowSenha] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const savedCredenciais = localStorage.getItem('credenciais');
+    if (savedCredenciais) {
+      const { email, senha } = JSON.parse(savedCredenciais);
+      setEmail(email);
+      setSenha(senha);
+      setLembrar(true);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
@@ -22,8 +32,10 @@ export default function Login() {
 
       if (lembrar) {
         localStorage.setItem('token', token);
+        localStorage.setItem('credenciais', JSON.stringify({ email, senha }));
       } else {
         sessionStorage.setItem('token', token);
+        localStorage.removeItem('credenciais');
       }
 
       localStorage.setItem('admin', JSON.stringify(administrador));
